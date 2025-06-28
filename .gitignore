@@ -1,1 +1,3 @@
 pictures/
+*.db
+__pycache__/
