@@ -45,29 +45,92 @@ class App:
         
         self.font=("微軟正黑體", 14)
 
-        # 設定視窗圖示
-        button_frame = tk.Frame(root)
-        button_frame.pack(pady=5,fill='x')
+        # 主要的左右frame
+        main_frame = tk.Frame(root)
+        main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        main_frame.pack_propagate(False)
+        
+        main_frame.columnconfigure(0, weight=3)  
+        main_frame.columnconfigure(1, weight=2)  
+        main_frame.rowconfigure(0, weight=1)  
+        
+
+        # 左側frame
+        left_frame = tk.Frame(main_frame)
+        left_frame.grid(row=0, column=0, sticky="nswe")
+        left_frame.grid_propagate(False)
+        
+        left_frame.rowconfigure(0, weight=1)  
+        left_frame.rowconfigure(1, weight=8)  
+        left_frame.columnconfigure(0, weight=1)
+        
+
+
+        # 右側frame
+        right_frame = tk.Frame(main_frame)
+        right_frame.grid(row=0, column=1, sticky="nswe")
+        right_frame.grid_propagate(False)
+        
+        right_frame.rowconfigure(0, weight=1)  # 讓右側frame可以擴展
+        right_frame.rowconfigure(1, weight=1)
+        right_frame.rowconfigure(2, weight=1)
+        right_frame.columnconfigure(0, weight=1)
+        
+
+        # 左側的上面frame
+        left_top_frame = tk.Frame(left_frame)
+        left_top_frame.grid(row=0,column=0, sticky="nswe")
+        left_top_frame.grid_propagate(False)
+        
+        left_top_frame.columnconfigure(0, weight=6)  # 讓左側上面frame可以擴展
+        left_top_frame.columnconfigure(1, weight=5)
+        left_top_frame.rowconfigure(0, weight=1)  # 讓左側上面frame可以擴展
+
+        working_light_frame = tk.Frame(left_top_frame, bd=2, relief='raised', bg="#f0f0f0")
+        working_light_frame.grid(row=0,column=0, sticky="nswe", padx=10, pady=10)
+        
+        working_light_frame.rowconfigure(0, weight=1)
+        working_light_frame.columnconfigure(0, weight=1)
+
+        working_light = tk.Label(working_light_frame, text="啟動中", font=self.font, bg="#f0f0f0", anchor='center')
+        working_light.grid(row=0,column=0, sticky="nswe")
 
         # 建立按鈕
-        self.btn_run = tk.Button(button_frame, text="手動執行", command=self.manual_run, font=self.font)
-        self.btn_run.pack(padx=10,pady=5,anchor='w', side='left')
-        
-        self.add_show_live_button(button_frame)  # 加入新按鈕
+        self.btn_run = tk.Button(left_top_frame, text="手動執行", command=self.manual_run, font=self.font)
+        self.btn_run.grid(row=0,column=1, sticky="nswe", padx=10, pady=10)
 
-        # 顯示排程狀態
-        self.label_status = tk.Label(root, text="排程狀態：未啟動", font=self.font)
-        self.label_status.pack(padx=10,pady=5, anchor='w')
+
+        # 加入新按鈕
+        btn_show_live = tk.Button(right_frame, text="開台狀態", command=self.show_latest_live_channels, font=self.font)
+        btn_show_live.grid(row=0 ,column=0, sticky="nswe", padx=10, pady=10)
+        
+        self.btn_clear = tk.Button(right_frame, text="數據", command=self.clear_log, font=self.font)
+        self.btn_clear.grid(row=1 ,column=0, sticky="nswe", padx=10, pady=10)
+        
+        self.btn_tmp = tk.Button(right_frame, text="temp",command=None, font=self.font)
+        self.btn_tmp.grid(row=2,column=0, sticky="nswe", padx=10, pady=10)
+
+
+        # 日誌輸出框所在的frame
+        log_frame = tk.Frame(left_frame)
+        log_frame.grid(row=1, column=0, sticky="nswe")
+        log_frame.grid_propagate(False)
+        
+        log_frame.columnconfigure(0, weight=1)
+        log_frame.rowconfigure(0, weight=1)
+        
 
         # 日誌輸出框
-        self.log_box = ScrolledText(root, state='disabled', height=15, font=self.font)
-        self.log_box.pack(fill='both', expand=True, padx=10, pady=5)
+        self.log_box = ScrolledText(log_frame, state='disabled', font=self.font, wrap='word')
+        self.log_box.grid(row=0,column=0, sticky="nswe", padx=10, pady=10)
+
 
         # APScheduler 背景排程
         self.scheduler = BackgroundScheduler()
         self.scheduler.add_job(self.scheduled_job, 'cron', minute='0,15,30,45')
         self.scheduler.start()
-        self.label_status.config(text="排程狀態：已啟動     每小時0,15,30,45分執行")
+        #self.label_status.config(text="排程狀態：已啟動     每小時0,15,30,45分執行")
+
 
     def log(self, message):
         self.log_box.config(state='normal')
@@ -88,9 +151,8 @@ class App:
         Thread(target=main_task, args=(self.log,self.clear_log,1)).start()
 
     # 新增顯示最近開台頻道按鈕
-    def add_show_live_button(self, button_frame):
-            btn_show_live = tk.Button(button_frame, text="開台狀態", command=self.show_latest_live_channels, font=self.font)
-            btn_show_live.pack(anchor="w", padx=10, pady=5, side='left')
+    #def add_show_live_button(self, button_frame):
+    
 
     # 顯示最近開台頻道
     def show_latest_live_channels(self):
