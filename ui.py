@@ -9,9 +9,11 @@ import sqlite3
 
 from main import main
 
+from sql import latest_live_channels
+
 task_lock = threading.Lock()
 
-DB_PATH = "viewer_data.db"
+DB_PATH = "data.db"
 
 
 
@@ -163,59 +165,7 @@ class App:
         
         self.clear_log()  # 清空日誌
         
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        
-        # 獲取當前時間，並計算最近的15分鐘時間點
-        now = datetime.datetime.now()
-        minute = now.minute
-        nearest_minute = max(m for m in [0, 15, 30, 45] if m <= minute)
-        
-        # 設定開始時間為最近的15分鐘時間點
-        start_time = now.replace(minute=nearest_minute, second=0, microsecond=0)
-        
-        # 計算結束時間，跳到下一個15分鐘刻度
-        next_minute_candidates = [m for m in [0, 15, 30, 45] if m > nearest_minute]
-        if next_minute_candidates:
-            next_minute = min(next_minute_candidates)
-            end_time = start_time.replace(minute=next_minute)
-        else:
-            # 如果沒有更大的刻度，代表要跳到下一小時的0分
-            end_time = (start_time + datetime.timedelta(hours=1)).replace(minute=0)
-        
-        
-        # 轉換時間格式為字串
-        start_date = start_time.strftime("%Y-%m-%d")
-        start_time_str = start_time.strftime("%H:%M:%S")
-        start_time_output = start_time.strftime("%H:%M")
-        end_date = end_time.strftime("%Y-%m-%d")
-        end_time_str = end_time.strftime("%H:%M:%S")
-        end_time_output = end_time.strftime("%H:%M")
-        
-        
-        self.log(f"📅 查詢時間區間：{start_date} {start_time_output} ~ {end_date} {end_time_output}\n")
-
-        # 如果區間跨日，需要分成兩個條件查詢
-        if start_date == end_date:
-            cursor.execute("""
-                SELECT channel, MAX(youtube) as youtube, MAX(twitch) as twitch
-                FROM viewers
-                WHERE date=? AND time >= ? AND time < ? AND (youtube>0 OR twitch>0)
-                GROUP BY channel
-            """, (start_date, start_time_str, end_time_str))
-        else:
-            cursor.execute("""
-                SELECT channel, MAX(youtube) as youtube, MAX(twitch) as twitch
-                FROM viewers
-                WHERE
-                    (date = ? AND time >= ?)
-                    OR
-                    (date = ? AND time < ?)
-                    AND (youtube>0 OR twitch>0)
-                GROUP BY channel
-            """, (start_date, start_time_str, end_date, end_time_str))
-        
-        rows = cursor.fetchall()
+        rows = latest_live_channels(self.log)
         
         if not rows:
             self.log(f"沒有頻道正在開台\n")
@@ -228,7 +178,7 @@ class App:
                     self.log(f"● {channel} 在 YouTube 開台\n")
                 elif tw != 0:
                     self.log(f"● {channel} 在 Twitch 開台\n")
-        conn.close()
+        
 
 
 if __name__ == "__main__":

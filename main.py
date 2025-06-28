@@ -18,40 +18,15 @@ from twitch import (
     twitch_extract_viewer_count
 )
 
+from sql import (
+    init_db,
+    add_streamer,
+    save_viewer_count,
+)
+
 OCR_READER = easyocr.Reader(['ch_tra', 'en'])
-DB_PATH = "viewer_data.db"
+DB_PATH = "data.db"
 
-def init_db(db_path=DB_PATH):
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS viewers (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        date TEXT NOT NULL,
-        time TEXT NOT NULL,
-        channel TEXT NOT NULL,
-        youtube INTEGER NOT NULL,
-        twitch INTEGER NOT NULL
-    )
-    ''')
-    conn.commit()
-    conn.close()
-
-def save_viewer_count(channel_name, yt_count=0, tw_count=0, db_path=DB_PATH):
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    now = time.localtime()
-    date_str = time.strftime('%Y-%m-%d', now)
-    time_str = time.strftime('%H:%M:%S', now)
-
-    cursor.execute('''
-    INSERT INTO viewers (date, time, channel, youtube, twitch)
-    VALUES (?, ?, ?, ?, ?)
-    ''', (date_str, time_str, channel_name, yt_count, tw_count))
-
-    conn.commit()
-    conn.close()
-    print(f"✅ 已儲存至資料庫：{channel_name} - YouTube: {yt_count} 人, Twitch: {tw_count} 人 ({date_str} {time_str})")
 
 
 def load_channels_from_csv(csv_path):
