@@ -1,6 +1,7 @@
 import sqlite3
 import time
 import datetime
+import csv
 
 DB_PATH = "data.db"
 
@@ -37,7 +38,7 @@ def init_db(db_path=DB_PATH):
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS streamer(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        channel_id TEXT NOT NULL,
+        channel_id TEXT NOT NULL UNIQUE,
         channel_name TEXT NOT NULL,
         yt_url TEXT DEFAULT NULL,
         tw_url TEXT DEFAULT NULL
@@ -49,7 +50,7 @@ def init_db(db_path=DB_PATH):
 
 
 # 儲存觀看人數到資料庫
-def save_viewer_count(channel_name, yt_count=0, tw_count=0, db_path=DB_PATH):
+def save_viewer_count(channel_id, yt_count=0, tw_count=0, db_path=DB_PATH):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     now = time.localtime()
@@ -61,12 +62,15 @@ def save_viewer_count(channel_name, yt_count=0, tw_count=0, db_path=DB_PATH):
     cursor.execute('''
     INSERT INTO main (date, time, channel, youtube, twitch, yt_number, tw_number)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-    ''', (date_str, time_str, channel_name, yt_count, tw_count, yt_number, tw_number))
+    ''', (date_str, time_str, channel_id, yt_count, tw_count, yt_number, tw_number))
 
     conn.commit()
     conn.close()
-    print(f"✅ 已儲存至資料庫：{channel_name} - YouTube: {yt_count} 人, Twitch: {tw_count} 人 ({date_str} {time_str})")
+    print(f"✅ 已儲存至資料庫：{channel_id} - YouTube: {yt_count} 人, Twitch: {tw_count} 人 ({date_str} {time_str})")
 
+def yt_number_get(db_path=DB_PATH):
+    
+    return 0
 
 # 新增直播主資料到資料庫
 def add_streamer(channel_id, channel_name, yt_url=None, tw_url=None, db_path=DB_PATH):
@@ -78,12 +82,15 @@ def add_streamer(channel_id, channel_name, yt_url=None, tw_url=None, db_path=DB_
         cursor = conn.cursor()
 
         cursor.execute('''
-        INSERT INTO streamer (channel_id, channel_name, yt_url, tw_url)
+        INSERT OR IGNORE INTO streamer (channel_id, channel_name, yt_url, tw_url)
         VALUES (?, ?, ?, ?)
         ''', (channel_id, channel_name, yt_url, tw_url))
 
         conn.commit()
-        print(f"✅ 已新增直播主：{channel_name} ({channel_id})")
+        if cursor.rowcount == 0:
+            print(f"⚠️ 已存在：{channel_id}，資料未更新")
+        else:
+            print(f"✅ 已新增直播主：{channel_name} ({channel_id})")
         return True
 
     except Exception as e:
@@ -93,9 +100,47 @@ def add_streamer(channel_id, channel_name, yt_url=None, tw_url=None, db_path=DB_
     finally:
         conn.close()
 
-def yt_number_get(db_path=DB_PATH):
-    
-    return 0
+def import_streamers_from_csv(csv_path, db_path):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    with open(csv_path, newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+
+        for row in reader:
+            channel_id = row['channel_id']
+            channel_name = row['channel_name']
+            yt_url = row['yt_url'] if row['yt_url'] != '' else None
+            tw_url = row['tw_url'] if row['tw_url'] != '' else None
+
+            add_streamer(channel_id, channel_name, yt_url, tw_url, db_path)
+
+    conn.commit()
+    conn.close()
+    print("✅ 匯入完成！")
+
+
+def load_channels_from_db(db_path):
+    """
+    從資料庫讀取 streamer 表中的頻道資料
+    回傳格式：[("channel_id", "channel_name", "yt_full_url", "tw_url"), ...]
+    """
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT channel_id, channel_name, yt_url, tw_url FROM streamer")
+    rows = cursor.fetchall()
+    conn.close()
+
+    channel_list = []
+    for channel_id, channel_name, yt_url, tw_url in rows:
+        yt_full_url = yt_url.rstrip('/') + '/streams' if yt_url else None
+        tw_url = tw_url.rstrip('/') if tw_url else None
+        channel_list.append((channel_id, channel_name, yt_full_url, tw_url))
+
+    return channel_list
+
+
 
 # 獲取最近15分鐘內正在開台的頻道
 def latest_live_channels(log):
@@ -154,3 +199,22 @@ def latest_live_channels(log):
     
     rows = cursor.fetchall()
     return rows
+
+
+
+def get_channel_name_by_id(channel_id, db_path):
+    """
+    輸入 channel_id，回傳對應的 channel_name。
+    找不到時回傳 None。
+    """
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT channel_name FROM streamer WHERE channel_id = ?", (channel_id,))
+    result = cursor.fetchone()
+    conn.close()
+
+    if result:
+        return result[0]  # channel_name
+    else:
+        return None

@@ -22,38 +22,13 @@ from sql import (
     init_db,
     add_streamer,
     save_viewer_count,
+    load_channels_from_db
 )
 
 OCR_READER = easyocr.Reader(['ch_tra', 'en'])
 DB_PATH = "data.db"
 
 
-
-def load_channels_from_csv(csv_path):
-    """
-    從 CSV 檔讀入頻道清單
-    回傳格式：[("channel_id", "channel_name", "url"), ...]
-    """
-    channel_list = []
-    with open(csv_path, newline='', encoding='utf-8') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            channel_id = row['channel_id']
-            channel_name = row['channel_name']
-            yt_base_url = row['yt_url'].rstrip('/')  # 移除多餘的 / 避免變成 //streams
-            if yt_base_url:
-                yt_full_url = yt_base_url + '/streams'
-            else:
-                yt_full_url = None
-            tw_url = row['tw_url'].rstrip('/')
-            channel_list.append((channel_id, channel_name, yt_full_url ,tw_url))
-    return channel_list
-
-"""
-def job():
-    print("定時任務啟動")
-    main()
-"""
 
 def yt_part(log, cid, name, yt_url, driver):
     
@@ -176,7 +151,7 @@ def main(log_callback=None):
     log("=" * 50)
     
     # 讀取頻道清單
-    channel_list = load_channels_from_csv("channels.csv")
+    channel_list = load_channels_from_db(DB_PATH)
     
     
     # 主程式開始
@@ -205,7 +180,7 @@ def main(log_callback=None):
         if ytstreaming or twstreaming:
             log(f"✅ {name} 直播狀態：YouTube: {str(yt_count)+"人" if ytstreaming else "沒有開台"}, Twitch: {str(tw_count)+"人" if twstreaming else "沒有開台"}")
             
-            save_viewer_count(name, yt_count, tw_count, DB_PATH)
+            save_viewer_count(cid, yt_count, tw_count, DB_PATH)
             
     log("\n✅ 所有頻道處理完成")
     print("\n✅ 所有頻道處理完成")

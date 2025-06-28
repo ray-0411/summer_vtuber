@@ -9,7 +9,9 @@ import sqlite3
 
 from main import main
 
-from sql import latest_live_channels
+from sql import \
+    (latest_live_channels
+    ,get_channel_name_by_id)
 
 task_lock = threading.Lock()
 
@@ -172,12 +174,13 @@ class App:
         else:
             self.log("🎥 目前開台頻道：\n")
             for channel, yt, tw in rows:
+                name = get_channel_name_by_id(channel, DB_PATH)
                 if yt !=0 and tw != 0:
-                    self.log(f"● {channel} 在 YouTube 和 Twitch 都開台\n")
+                    self.log(f"● {name} 在 YouTube 和 Twitch 都開台\n")
                 elif yt != 0:
-                    self.log(f"● {channel} 在 YouTube 開台\n")
+                    self.log(f"● {name} 在 YouTube 開台\n")
                 elif tw != 0:
-                    self.log(f"● {channel} 在 Twitch 開台\n")
+                    self.log(f"● {name} 在 Twitch 開台\n")
         
 
 
