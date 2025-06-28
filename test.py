@@ -42,7 +42,7 @@ if __name__ == "__main__":
     
     #youtube_capture_screenshot(test_yt_url, test_save_path, driver)
     #nouse,find_x,find_y = youtube_find_and_crop(test_save_path, "find/yt_find.png", crop_path,45,crop_height=100,crop_width=420)
-    #youtube_click_for_link(driver,find_x,find_y)
+    #youtube_click_for_link(driver,test_yt_url,find_x,find_y)
     #youtube_extract_viewer_count(crop_path, OCR_READER)
     #youtube_extract_name(crop_path, OCR_READER)
     

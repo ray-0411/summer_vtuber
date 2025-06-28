@@ -3,6 +3,7 @@ import time
 import datetime
 import csv
 
+
 DB_PATH = "data.db"
 
 # 初始化資料庫
@@ -56,8 +57,10 @@ def save_viewer_count(channel_id, yt_count=0, tw_count=0, db_path=DB_PATH):
     now = time.localtime()
     date_str = time.strftime('%Y-%m-%d', now)
     time_str = time.strftime('%H:%M:%S', now)
-    yt_number = yt_number_get()
-    tw_number = 0  # 目前沒有使用 Twitch 的頻道號碼
+    if yt_count != 0:
+        yt_number = yt_number_get()
+    if tw_count != 0:
+        tw_number = 0  # 目前沒有使用 Twitch 的頻道號碼
 
     cursor.execute('''
     INSERT INTO main (date, time, channel, youtube, twitch, yt_number, tw_number)
@@ -68,9 +71,78 @@ def save_viewer_count(channel_id, yt_count=0, tw_count=0, db_path=DB_PATH):
     conn.close()
     print(f"✅ 已儲存至資料庫：{channel_id} - YouTube: {yt_count} 人, Twitch: {tw_count} 人 ({date_str} {time_str})")
 
-def yt_number_get(db_path=DB_PATH):
+def yt_number_get(channel_id, db_path=DB_PATH):
     
-    return 0
+    istreaming = yt_is_straming(channel_id, db_path)
+    if istreaming:
+        now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            UPDATE stream
+            SET end_time = ?
+            WHERE id = ?
+        ''', (now, istreaming))
+
+        conn.commit()
+        conn.close()
+        print(f"✅ 已更新 stream ID={istreaming} 的 end_time 為 {now}")
+        
+        return istreaming
+    else:
+        rtid = create_stream_yt(channel_id, db_path)
+        return rtid
+
+
+def yt_is_straming(channel_id, db_path=DB_PATH):
+    now = datetime.datetime.now()
+    time_30min_ago = now - datetime.timedelta(minutes=30)
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        SELECT * FROM stream
+        WHERE channel_name = ?
+        AND end_time BETWEEN ? AND ?
+    ''', (
+        channel_id,
+        time_30min_ago.strftime('%Y-%m-%d %H:%M:%S'),
+        now.strftime('%Y-%m-%d %H:%M:%S')
+    ))
+    
+    result = cursor.fetchone()
+    conn.close()
+    
+    return result[0] if result else 0
+
+
+def create_stream_yt(channel_id, db_path=DB_PATH):
+    
+    now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    
+    name = None
+    url = None  
+
+    cursor.execute('''
+        INSERT INTO stream (channel_name, name, type, url, start_time, end_time)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (channel_id, name, "youtube", url, now, now))
+
+    conn.commit()
+    inserted_id = cursor.lastrowid
+    conn.close()
+
+    print(f"✅ 已新增直播紀錄，ID = {inserted_id}")
+    return inserted_id  # 回傳這筆資料的 id
+
+
+
 
 # 新增直播主資料到資料庫
 def add_streamer(channel_id, channel_name, yt_url=None, tw_url=None, db_path=DB_PATH):

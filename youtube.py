@@ -214,7 +214,7 @@ def youtube_extract_name(cropped_image_path,OCR_READER=None):
         return -1
 
 
-def youtube_click_for_link(driver,x,y):
+def youtube_click_for_link(driver,first_link,x,y):
     
     try:
         print(f"🖱️ 點擊座標 ({x}, {y})...")
