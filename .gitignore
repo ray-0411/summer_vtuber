@@ -1,3 +1,4 @@
 pictures/
 *.db
 __pycache__/
+test/

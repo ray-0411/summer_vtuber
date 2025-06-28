@@ -9,7 +9,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
+from selenium.webdriver.common.action_chains import ActionChains
 
 def youtube_capture_screenshot(target_url, save_path,driver=None):
     """
@@ -80,7 +80,7 @@ def youtube_find_and_crop \
     
     if img is None or template_orig is None:
         print("❌ 無法載入圖片檔案")
-        return 2
+        return 2,0,0
     
     template_gray = cv2.cvtColor(template_orig, cv2.COLOR_BGR2GRAY)
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -135,10 +135,10 @@ def youtube_find_and_crop \
         os.makedirs(os.path.dirname(crop_output_path), exist_ok=True)
         cv2.imwrite(crop_output_path, cropped)
         print(f"✅ 已儲存截圖區域 {crop_output_path}")
-        return 0
+        return 0,top_left[0], top_left[1]
     else:
         print("❌ 沒找到符合的圖案")
-        return 1
+        return 1,0,0
 
 def youtube_extract_viewer_count(cropped_image_path,OCR_READER=None):
     """
@@ -213,4 +213,27 @@ def youtube_extract_name(cropped_image_path,OCR_READER=None):
         print(f"❌ OCR 處理時發生錯誤：{e}")
         return -1
 
+
+def youtube_click_for_link(driver,x,y):
+    
+    try:
+        print(f"🖱️ 點擊座標 ({x}, {y})...")
+
+        actions = ActionChains(driver)
+        actions.move_by_offset(x, y).click().perform()
+        actions.move_by_offset(-x, -y).perform()  # 把滑鼠移回來，避免影響後續操作
+
+        print("⏳ 等待頁面跳轉...")
+        WebDriverWait(driver, 2).until(
+            lambda d: "/watch?" in d.current_url
+        )
+
+        new_url = driver.current_url
+        print(f"✅ 已進入影片頁：{new_url}")
+        return new_url
+
+    except Exception as e:
+        print("❌ 點擊後未能成功跳轉影片頁：", e)
+        return None
+    
 
