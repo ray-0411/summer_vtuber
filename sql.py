@@ -3,6 +3,13 @@ import time
 import datetime
 import csv
 
+from youtube import (
+    youtube_find_and_crop,
+    youtube_capture_screenshot,
+    youtube_extract_name,
+    youtube_click_for_link,
+)
+
 
 DB_PATH = "data.db"
 
@@ -51,16 +58,21 @@ def init_db(db_path=DB_PATH):
 
 
 # 儲存觀看人數到資料庫
-def save_viewer_count(channel_id, yt_count=0, tw_count=0, db_path=DB_PATH):
+def save_viewer_count \
+    (channel_id, 
+    yt_count=0, 
+    tw_count=0, 
+    yt_number=0,
+    tw_number=0,
+    db_path=DB_PATH):
+    
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     now = time.localtime()
     date_str = time.strftime('%Y-%m-%d', now)
     time_str = time.strftime('%H:%M:%S', now)
-    if yt_count != 0:
-        yt_number = yt_number_get()
-    if tw_count != 0:
-        tw_number = 0  # 目前沒有使用 Twitch 的頻道號碼
+
+
 
     cursor.execute('''
     INSERT INTO main (date, time, channel, youtube, twitch, yt_number, tw_number)
@@ -71,7 +83,7 @@ def save_viewer_count(channel_id, yt_count=0, tw_count=0, db_path=DB_PATH):
     conn.close()
     print(f"✅ 已儲存至資料庫：{channel_id} - YouTube: {yt_count} 人, Twitch: {tw_count} 人 ({date_str} {time_str})")
 
-def yt_number_get(channel_id, db_path=DB_PATH):
+def yt_number_get(channel_id, args, db_path=DB_PATH):
     
     istreaming = yt_is_straming(channel_id, db_path)
     if istreaming:
@@ -87,12 +99,12 @@ def yt_number_get(channel_id, db_path=DB_PATH):
         ''', (now, istreaming))
 
         conn.commit()
-        conn.close()
+        #conn.close()
         print(f"✅ 已更新 stream ID={istreaming} 的 end_time 為 {now}")
         
         return istreaming
     else:
-        rtid = create_stream_yt(channel_id, db_path)
+        rtid = create_stream_yt(channel_id, args, db_path)
         return rtid
 
 
@@ -119,15 +131,34 @@ def yt_is_straming(channel_id, db_path=DB_PATH):
     return result[0] if result else 0
 
 
-def create_stream_yt(channel_id, db_path=DB_PATH):
+def create_stream_yt\
+(channel_id, args, db_path=DB_PATH):
     
     now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     
-    name = None
-    url = None  
+    """
+    args ={
+                "driver": driver,
+                "cid": cid,
+                "yt_url": yt_url,
+                "screenshot_path" : f"pictures/yt_picture/{cid}_capture.png",
+                "cropped_path" : f"pictures/yt_crop/{cid}_crop.png",
+                "template_path" : "find/yt_find.png",
+                "OCR_READER": OCR_READER
+            } 
+    """
+    
+    #youtube_capture_screenshot(test_yt_url, test_save_path, driver)
+    nouse,find_x,find_y = youtube_find_and_crop\
+    (args["screenshot_path"], args["template_path"], args["cropped_path"], 45,crop_height=100,crop_width=420)
+    name = youtube_extract_name(args["cropped_path"], args["OCR_READER"])
+    url = youtube_click_for_link(args["driver"],args["yt_url"],find_x,find_y)
+    
+    #name = "space"
+    #url = "space"  
 
     cursor.execute('''
         INSERT INTO stream (channel_name, name, type, url, start_time, end_time)

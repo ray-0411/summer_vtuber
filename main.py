@@ -22,7 +22,8 @@ from sql import (
     init_db,
     add_streamer,
     save_viewer_count,
-    load_channels_from_db
+    load_channels_from_db,
+    yt_number_get
 )
 
 OCR_READER = easyocr.Reader(['ch_tra', 'en'])
@@ -180,7 +181,27 @@ def main(log_callback=None):
         if ytstreaming or twstreaming:
             log(f"✅ {name} 直播狀態：YouTube: {str(yt_count)+"人" if ytstreaming else "沒有開台"}, Twitch: {str(tw_count)+"人" if twstreaming else "沒有開台"}")
             
-            save_viewer_count(cid, yt_count, tw_count, DB_PATH)
+            args ={
+                "driver": driver,
+                "cid": cid,
+                "yt_url": yt_url,
+                "screenshot_path" : f"pictures/yt_picture/{cid}_capture.png",
+                "cropped_path" : f"pictures/yt_crop/{cid}_crop.png",
+                "template_path" : "find/yt_find.png",
+                "OCR_READER": OCR_READER
+            } 
+            
+            if ytstreaming:
+                yt_number = yt_number_get(cid, args, DB_PATH)
+            else:
+                yt_number = 0
+            
+            if twstreaming:
+                tw_number = 0
+            else:
+                tw_number = 0
+            
+            save_viewer_count(cid, yt_count, tw_count, yt_number, tw_number, DB_PATH)
             
     log("\n✅ 所有頻道處理完成")
     print("\n✅ 所有頻道處理完成")

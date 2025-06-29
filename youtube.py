@@ -235,5 +235,15 @@ def youtube_click_for_link(driver,first_link,x,y):
     except Exception as e:
         print("❌ 點擊後未能成功跳轉影片頁：", e)
         return None
+
+def youtube_get_title(driver):
+    """
+    從 YouTube 影片頁面獲取標題
+    """
     
+    try:
+        return 0
+    except Exception as e:
+        print("❌ 獲取標題時發生錯誤：", e)
+        return None
 
