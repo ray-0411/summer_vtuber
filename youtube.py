@@ -217,6 +217,18 @@ def youtube_extract_name(cropped_image_path,OCR_READER=None):
 def youtube_click_for_link(driver,first_link,x,y):
     
     try:
+        driver.get(first_link)
+
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body"))
+        )
+
+        driver.execute_script("document.body.style.zoom='130%'")
+        
+        WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body"))
+        )
+        
         print(f"🖱️ 點擊座標 ({x}, {y})...")
 
         actions = ActionChains(driver)
@@ -234,16 +246,5 @@ def youtube_click_for_link(driver,first_link,x,y):
 
     except Exception as e:
         print("❌ 點擊後未能成功跳轉影片頁：", e)
-        return None
-
-def youtube_get_title(driver):
-    """
-    從 YouTube 影片頁面獲取標題
-    """
-    
-    try:
-        return 0
-    except Exception as e:
-        print("❌ 獲取標題時發生錯誤：", e)
         return None
 

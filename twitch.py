@@ -215,3 +215,34 @@ def clean_ocr_text(text):
         'T': '7'  # ← 這個是你的重點
     }
     return ''.join(replacements.get(c, c) for c in text)
+
+def twitch_extract_name(cropped_image_path, OCR_READER=None):
+    """
+    使用 EasyOCR 從裁切的圖片中提取觀看人數
+    """
+    print("📖 開始 OCR 文字識別...")
+    
+    try:
+        # 建立 OCR 讀取器（指定繁體中文 + 英文）
+        #reader = easyocr.Reader(['ch_tra', 'en'])  # ch_tra = 繁體中文
+
+        # 讀取圖片
+        result = OCR_READER.readtext(cropped_image_path, detail=0)
+
+        # 辨識後的文字
+        text = ' '.join(result)
+        print("OCR 原始結果：", text)
+
+
+        #print(f"找到的數字：{match}")
+        
+        
+        if text:
+            return text
+        else:
+            print("❌ 沒找到觀看人數")
+            return -1
+            
+    except Exception as e:
+        print(f"❌ OCR 處理時發生錯誤：{e}")
+        return -2

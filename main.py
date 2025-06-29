@@ -15,7 +15,7 @@ from youtube import (
 from twitch import (
     twitch_capture_screenshot,
     twitch_find_and_crop,
-    twitch_extract_viewer_count
+    twitch_extract_viewer_count,
 )
 
 from sql import (
@@ -23,7 +23,8 @@ from sql import (
     add_streamer,
     save_viewer_count,
     load_channels_from_db,
-    yt_number_get
+    yt_number_get,
+    tw_number_get
 )
 
 OCR_READER = easyocr.Reader(['ch_tra', 'en'])
@@ -181,23 +182,31 @@ def main(log_callback=None):
         if ytstreaming or twstreaming:
             log(f"✅ {name} 直播狀態：YouTube: {str(yt_count)+"人" if ytstreaming else "沒有開台"}, Twitch: {str(tw_count)+"人" if twstreaming else "沒有開台"}")
             
-            args ={
-                "driver": driver,
-                "cid": cid,
-                "yt_url": yt_url,
-                "screenshot_path" : f"pictures/yt_picture/{cid}_capture.png",
-                "cropped_path" : f"pictures/yt_crop/{cid}_crop.png",
-                "template_path" : "find/yt_find.png",
-                "OCR_READER": OCR_READER
-            } 
+            
             
             if ytstreaming:
+                args ={
+                    "driver": driver,
+                    "cid": cid,
+                    "yt_url": yt_url,
+                    "screenshot_path" : f"pictures/yt_picture/{cid}_capture.png",
+                    "cropped_path" : f"pictures/yt_crop/{cid}_crop.png",
+                    "template_path" : "find/yt_find.png",
+                    "OCR_READER": OCR_READER
+                } 
                 yt_number = yt_number_get(cid, args, DB_PATH)
             else:
+                
                 yt_number = 0
             
             if twstreaming:
-                tw_number = 0
+                args ={
+                    "screenshot_path" : f"pictures/tw_picture/{cid}_capture.png",
+                    "cropped_path" : f"pictures/tw_crop/{cid}_crop.png",
+                    "OCR_READER": OCR_READER
+                }
+                #tw_number = 0
+                tw_number = tw_number_get(cid, args, DB_PATH)
             else:
                 tw_number = 0
             

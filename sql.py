@@ -10,6 +10,11 @@ from youtube import (
     youtube_click_for_link,
 )
 
+from twitch import (
+    twitch_find_and_crop,
+    twitch_extract_name
+)
+
 
 DB_PATH = "data.db"
 
@@ -85,7 +90,7 @@ def save_viewer_count \
 
 def yt_number_get(channel_id, args, db_path=DB_PATH):
     
-    istreaming = yt_is_straming(channel_id, db_path)
+    istreaming = is_straming(channel_id, 0, db_path)
     if istreaming:
         now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -99,7 +104,7 @@ def yt_number_get(channel_id, args, db_path=DB_PATH):
         ''', (now, istreaming))
 
         conn.commit()
-        #conn.close()
+        conn.close()
         print(f"✅ 已更新 stream ID={istreaming} 的 end_time 為 {now}")
         
         return istreaming
@@ -108,27 +113,35 @@ def yt_number_get(channel_id, args, db_path=DB_PATH):
         return rtid
 
 
-def yt_is_straming(channel_id, db_path=DB_PATH):
+def is_straming(channel_id, type, db_path=DB_PATH):
     now = datetime.datetime.now()
     time_30min_ago = now - datetime.timedelta(minutes=30)
 
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
+    
+    if type == 0:
+        type = "youtube"
+    else:
+        type = "twitch"
 
     cursor.execute('''
         SELECT * FROM stream
         WHERE channel_name = ?
         AND end_time BETWEEN ? AND ?
+        AND type = ?
     ''', (
         channel_id,
         time_30min_ago.strftime('%Y-%m-%d %H:%M:%S'),
-        now.strftime('%Y-%m-%d %H:%M:%S')
+        now.strftime('%Y-%m-%d %H:%M:%S'),
+        type
     ))
     
     result = cursor.fetchone()
     conn.close()
     
     return result[0] if result else 0
+
 
 
 def create_stream_yt\
@@ -173,7 +186,65 @@ def create_stream_yt\
     return inserted_id  # 回傳這筆資料的 id
 
 
+def tw_number_get(channel_id, args, db_path=DB_PATH):
+    
+    istreaming = is_straming(channel_id, 1, db_path)
+    if istreaming:
+        now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            UPDATE stream
+            SET end_time = ?
+            WHERE id = ?
+        ''', (now, istreaming))
+
+        conn.commit()
+        conn.close()
+        print(f"✅ 已更新 stream ID={istreaming} 的 end_time 為 {now}")
+        
+        return istreaming
+    else:
+        rtid = create_stream_tw(channel_id, args, db_path)
+        return rtid
+
+def create_stream_tw\
+(channel_id, args, db_path=DB_PATH):
+
+    now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    
+    """
+    args ={
+                "screenshot_path" : f"pictures/yt_picture/{cid}_capture.png",
+                "cropped_path" : f"pictures/yt_crop/{cid}_crop.png",
+                "OCR_READER": OCR_READER
+            } 
+    """
+    
+    
+    twitch_find_and_crop(args["screenshot_path"], "find/tw_find_2.png", args["cropped_path"],
+                    offset_x=-1490,offset_y=-20, crop_height=100, crop_width=1200)
+    name = twitch_extract_name(args["cropped_path"],args["OCR_READER"])
+    url = "twitch"
+    #name = "space"
+    #url = "space"  
+
+    cursor.execute('''
+        INSERT INTO stream (channel_name, name, type, url, start_time, end_time)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (channel_id, name, "twitch", url, now, now))
+
+    conn.commit()
+    inserted_id = cursor.lastrowid
+    conn.close()
+
+    print(f"✅ 已新增直播紀錄，ID = {inserted_id}")
+    return inserted_id  # 回傳這筆資料的 id
 
 # 新增直播主資料到資料庫
 def add_streamer(channel_id, channel_name, yt_url=None, tw_url=None, db_path=DB_PATH):
