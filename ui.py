@@ -35,7 +35,7 @@ def main_task(log_callback, clear_callback,kind):
             log_callback(f"🕒 啟動時自動執行\n執行時間:{now}\n\n")
         log_callback("開始執行抓取工作...\n")
         # 你的抓取主程式
-        main(log_callback)
+        main(log_callback,kind)
         log_callback("抓取完成！\n")
     finally:
         task_lock.release()

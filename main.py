@@ -122,7 +122,7 @@ def tw_part(log, cid, name, tw_url , driver):
         return tw_count ,True
 
 
-def main(log_callback=None):
+def main(log_callback=None,kind=0):
     """
     主函數：整合所有步驟
     """
@@ -133,7 +133,7 @@ def main(log_callback=None):
     # 初始化資料庫
     init_db()
     
-    working_id = insert_working(True,False,None,0)  
+    working_id = insert_working(True,False,None,0,kind,0)  
     
     # 設定 Selenium WebDriver
     options = Options()
@@ -159,8 +159,10 @@ def main(log_callback=None):
     channel_list = load_channels_from_db(DB_PATH)
     
     
+    create = 0
     # 主程式開始
     for cid, name, yt_url, tw_url in channel_list:
+        
         
         ytstreaming = False  # 是否正在 YouTube 開台
         twstreaming = False  # 是否正在 Twitch 開台
@@ -185,6 +187,11 @@ def main(log_callback=None):
         if ytstreaming or twstreaming:
             log(f"✅ {name} 直播狀態：YouTube: {str(yt_count)+"人" if ytstreaming else "沒有開台"}, Twitch: {str(tw_count)+"人" if twstreaming else "沒有開台"}")
             
+            if ytstreaming:
+                create = create + 1
+            
+            if twstreaming:
+                create = create + 1
             
             
             if ytstreaming:
@@ -224,7 +231,7 @@ def main(log_callback=None):
     elapsed = end_time - start_time
     log(f"\n⏱️ 程式總共執行了 {elapsed:.2f} 秒")
     
-    insert_working(False,True,elapsed,working_id)  # 更新工作紀錄為完成
+    insert_working(False,True,elapsed,working_id,kind,create)  # 更新工作紀錄為完成
     
 
 if __name__ == "__main__":
