@@ -24,7 +24,8 @@ from sql import (
     save_viewer_count,
     load_channels_from_db,
     yt_number_get,
-    tw_number_get
+    tw_number_get,
+    insert_working
 )
 
 OCR_READER = easyocr.Reader(['ch_tra', 'en'])
@@ -132,6 +133,8 @@ def main(log_callback=None):
     # 初始化資料庫
     init_db()
     
+    working_id = insert_working(True,False,None,0)  
+    
     # 設定 Selenium WebDriver
     options = Options()
     options.add_argument('--headless')
@@ -150,7 +153,7 @@ def main(log_callback=None):
     
     
     log("🎯 開始執行直播觀看人數提取程序")
-    log("=" * 50)
+    log("=" * 30)
     
     # 讀取頻道清單
     channel_list = load_channels_from_db(DB_PATH)
@@ -220,6 +223,8 @@ def main(log_callback=None):
     end_time = time.time()
     elapsed = end_time - start_time
     log(f"\n⏱️ 程式總共執行了 {elapsed:.2f} 秒")
+    
+    insert_working(False,True,elapsed,working_id)  # 更新工作紀錄為完成
     
 
 if __name__ == "__main__":

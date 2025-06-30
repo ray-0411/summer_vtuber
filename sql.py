@@ -58,6 +58,15 @@ def init_db(db_path=DB_PATH):
     )
     ''')
     
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS working(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        time TEXT NOT NULL UNIQUE,
+        finish TEXT NOT NULL,
+        timer REAL DEFAULT NULL
+    )
+    ''')
+    
     conn.commit()
     conn.close()
 
@@ -245,6 +254,56 @@ def create_stream_tw\
 
     print(f"✅ 已新增直播紀錄，ID = {inserted_id}")
     return inserted_id  # 回傳這筆資料的 id
+
+
+def insert_working(start,finish, timer,id):
+    
+    """將一筆資料插入 streamer 資料表中"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    fin_text = "Finish" if finish else "Problem" 
+    
+    if start:
+        try:
+            now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            cursor.execute('''
+                INSERT INTO working (time, finish, timer)
+                VALUES (?, ?, ?)
+            ''', (now, fin_text, timer))
+            conn.commit()
+            id = cursor.lastrowid
+            
+            print(f"✅ 成功新增一筆 streamer 紀錄{id}")
+            
+            return id
+        except sqlite3.IntegrityError as e:
+            print(f"❌ 新增失敗，時間可能重複：{e}")
+        finally:
+            conn.close()
+    else:
+        try:
+            timer = round(timer, 2)
+            cursor.execute('''
+                UPDATE working
+                SET finish = ?, timer = ?
+                WHERE id = ?
+            ''', (fin_text, timer, id))  # 假設只更新第一筆資料
+            conn.commit()
+            print("✅ 成功更新 streamer 紀錄")
+        except sqlite3.Error as e:
+            print(f"❌ 更新失敗：{e}")
+        finally:
+            conn.close()
+
+
+
+
+
+
+
+# streamers 資料表相關操作
 
 # 新增直播主資料到資料庫
 def add_streamer(channel_id, channel_name, yt_url=None, tw_url=None, db_path=DB_PATH):

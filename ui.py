@@ -29,8 +29,10 @@ def main_task(log_callback, clear_callback,kind):
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         if kind == 0:
             log_callback(f"🕒 手動執行觸發\n執行時間:{now}\n\n")
-        else:
+        elif kind == 1:
             log_callback(f"🕒 排程任務觸發\n執行時間:{now}\n\n")
+        else:
+            log_callback(f"🕒 啟動時自動執行\n執行時間:{now}\n\n")
         log_callback("開始執行抓取工作...\n")
         # 你的抓取主程式
         main(log_callback)
@@ -78,6 +80,7 @@ class App:
         right_frame.rowconfigure(0, weight=1)  # 讓右側frame可以擴展
         right_frame.rowconfigure(1, weight=1)
         right_frame.rowconfigure(2, weight=1)
+        right_frame.rowconfigure(3, weight=1)
         right_frame.columnconfigure(0, weight=1)
         
 
@@ -113,6 +116,9 @@ class App:
         
         self.btn_tmp = tk.Button(right_frame, text="temp",command=None, font=self.font)
         self.btn_tmp.grid(row=2,column=0, sticky="nswe", padx=10, pady=10)
+        
+        self.btn_tmp = tk.Button(right_frame, text="temp2",command=None, font=self.font)
+        self.btn_tmp.grid(row=3,column=0, sticky="nswe", padx=10, pady=10)
 
 
         # 日誌輸出框所在的frame
@@ -134,6 +140,9 @@ class App:
         self.scheduler.add_job(self.scheduled_job, 'cron', minute='0,15,30,45')
         self.scheduler.start()
         #self.label_status.config(text="排程狀態：已啟動     每小時0,15,30,45分執行")
+
+
+        Thread(target=main_task, args=(self.log, self.clear_log, 2)).start()
 
 
     def log(self, message):
