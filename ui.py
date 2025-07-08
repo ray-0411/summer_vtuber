@@ -114,10 +114,10 @@ class App:
         self.btn_clear = tk.Button(right_frame, text="數據", command=self.clear_log, font=self.font)
         self.btn_clear.grid(row=1 ,column=0, sticky="nswe", padx=10, pady=10)
         
-        self.btn_tmp = tk.Button(right_frame, text="temp",command=None, font=self.font)
+        self.btn_tmp = tk.Button(right_frame, text="個別擷取",command=None, font=self.font)
         self.btn_tmp.grid(row=2,column=0, sticky="nswe", padx=10, pady=10)
         
-        self.btn_tmp = tk.Button(right_frame, text="temp2",command=None, font=self.font)
+        self.btn_tmp = tk.Button(right_frame, text="實況主設定",command=None, font=self.font)
         self.btn_tmp.grid(row=3,column=0, sticky="nswe", padx=10, pady=10)
 
 

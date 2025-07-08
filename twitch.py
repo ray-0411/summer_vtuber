@@ -38,7 +38,7 @@ def twitch_capture_screenshot(target_url, save_path, driver=None,zoom=140):
         wait.until(EC.presence_of_element_located((
             By.CSS_SELECTOR, "button[aria-label='更多選項'][title='更多選項']"
         )))
-        
+        time.sleep(1) 
         
         # 設定縮放為 130%
         driver.execute_script(f"document.body.style.zoom='{zoom}%'")
