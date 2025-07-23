@@ -64,7 +64,8 @@ def init_db(db_path=DB_PATH):
         time TEXT NOT NULL UNIQUE,
         finish TEXT NOT NULL,
         timer REAL DEFAULT NULL,
-        kind TEXT DEFAULT NULL
+        kind TEXT DEFAULT NULL,
+        "create" INTEGER DEFAULT NULL
     )
     ''')
     
