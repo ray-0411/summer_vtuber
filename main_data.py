@@ -2,6 +2,8 @@ import sqlite3
 import pandas as pd
 import streamlit as st
 
+#streamlit run main_data.py
+
 # 資料庫路徑
 db_path = "data.db"
 
@@ -9,6 +11,7 @@ db_path = "data.db"
 with sqlite3.connect(db_path) as conn:
     df = pd.read_sql_query("SELECT * FROM main", conn)
     df_streamer = pd.read_sql_query("SELECT * FROM streamer", conn)
+    df_stream = pd.read_sql_query("SELECT * FROM stream", conn)
 
 # 合併日期與時間
 df['datetime'] = pd.to_datetime(df['date'] + ' ' + df['time'])
@@ -41,34 +44,79 @@ if view_mode == "單一頻道":
     df_youtube = df_selected[df_selected['yt_number'] != 0]
     df_yt_summary = df_youtube.groupby('yt_number').agg(
         yt_avg=('youtube', lambda x: x[x >= 10].mean()),
+        yt_max=('youtube', lambda x: x[x >= 10].max()),
+        yt_min=('youtube', lambda x: x[x >= 10].min()),
         count=('datetime', 'count'),
         start_time=('datetime', 'min'),
         end_time=('datetime', 'max')
     ).reset_index()
-    df_yt_summary.columns = ['YouTube 直播 ID', 'YouTube 平均觀看數', '筆數', '開始時間', '結束時間']
+    df_yt_summary.columns = ['直播ID', '平均觀看數', '最大觀看數', '最小觀看數', '資料筆數', '開始時間', '結束時間']
 
     # Twitch 統計
     df_twitch = df_selected[df_selected['tw_number'] != 0]
     df_tw_summary = df_twitch.groupby('tw_number').agg(
         tw_avg=('twitch', lambda x: x[x >= 10].mean()),
+        tw_max=('twitch', lambda x: x[x >= 10].max()),
+        tw_min=('twitch', lambda x: x[x >= 10].min()),
         count=('datetime', 'count'),
         start_time=('datetime', 'min'),
         end_time=('datetime', 'max')
     ).reset_index()
-    df_tw_summary.columns = ['Twitch 直播 ID', 'Twitch 平均觀看數', '筆數', '開始時間', '結束時間']
+    df_tw_summary.columns = ['直播ID', '平均觀看數', '最大觀看數', '最小觀看數', '資料筆數', '開始時間', '結束時間']
 
-    # 顯示表格
+    # 轉成字串欄位，方便顯示
+    df_yt_summary['日期'] = df_yt_summary['開始時間'].dt.strftime("%Y-%m-%d").fillna("")
+    df_yt_summary['開始時間_str'] = df_yt_summary['開始時間'].dt.strftime("%H:%M").fillna("")
+    df_yt_summary['結束時間_str'] = df_yt_summary['結束時間'].dt.strftime("%H:%M").fillna("")
+
+    df_tw_summary['日期'] = df_tw_summary['開始時間'].dt.strftime("%Y-%m-%d").fillna("")
+    df_tw_summary['開始時間_str'] = df_tw_summary['開始時間'].dt.strftime("%H:%M").fillna("")
+    df_tw_summary['結束時間_str'] = df_tw_summary['結束時間'].dt.strftime("%H:%M").fillna("")
+
+    # 刪除 datetime 原欄位（若還有）
+    df_yt_summary.drop(columns=['開始時間', '結束時間'], inplace=True)
+    df_tw_summary.drop(columns=['開始時間', '結束時間'], inplace=True)
+
+    # 合併直播名稱（stream表）
+    df_yt_summary = pd.merge(df_yt_summary, df_stream[['id', 'name']], how='left', left_on='直播ID', right_on='id')
+    df_tw_summary = pd.merge(df_tw_summary, df_stream[['id', 'name']], how='left', left_on='直播ID', right_on='id')
+
+    # 顯示 YouTube 統計（拆成三欄）
     st.markdown("### 📺 YouTube 直播統計")
     st.dataframe(
-        df_yt_summary.style.format({"YouTube 平均觀看數": "{:.1f}"}),
+        df_yt_summary[[
+            '直播ID', '平均觀看數', '最大觀看數', '最小觀看數',
+            '資料筆數', '日期', '開始時間_str', '結束時間_str', 'name'
+        ]].rename(columns={
+            'name': '直播名稱',
+            '開始時間_str': '開始時間',
+            '結束時間_str': '結束時間',
+        }).style.format({
+            "平均觀看數": "{:.1f}",
+            "最大觀看數": "{:.0f}",
+            "最小觀看數": "{:.0f}"
+        }),
         use_container_width=True
     )
 
+    # 顯示 Twitch 統計（拆成三欄）
     st.markdown("### 🎮 Twitch 直播統計")
     st.dataframe(
-        df_tw_summary.style.format({"Twitch 平均觀看數": "{:.1f}"}),
+        df_tw_summary[[
+            '直播ID', '平均觀看數', '最大觀看數', '最小觀看數',
+            '資料筆數', '日期', '開始時間_str', '結束時間_str', 'name'
+        ]].rename(columns={
+            'name': '直播名稱',
+            '開始時間_str': '開始時間',
+            '結束時間_str': '結束時間',
+        }).style.format({
+            "平均觀看數": "{:.1f}",
+            "最大觀看數": "{:.0f}",
+            "最小觀看數": "{:.0f}"
+        }),
         use_container_width=True
     )
+
 
 # ---------- 總統計模式 ----------
 elif view_mode == "總觀看統計":
