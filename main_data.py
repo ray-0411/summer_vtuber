@@ -21,12 +21,16 @@ view_mode = st.selectbox("選擇檢視模式", ["總觀看統計","單一頻道"
 
 # ---------- 單一頻道模式 ----------
 if view_mode == "單一頻道":
-    # 頻道依 streamer.channel_id 排序
-    streamer_channels = df_streamer['channel_id'].tolist()
-    channels_in_data = df['channel'].unique()
-    channels = [ch for ch in streamer_channels if ch in channels_in_data]
+    # 建立 name -> channel_id 的映射
+    name_to_id = dict(zip(df_streamer['channel_name'], df_streamer['channel_id']))
 
-    selected_channel = st.selectbox("請選擇頻道", channels)
+    # 選單顯示所有頻道名稱（streamer表中所有）
+    selected_name = st.selectbox("請選擇頻道", df_streamer['channel_name'].tolist())
+
+    # 取得對應的 channel_id
+    selected_channel = name_to_id[selected_name]
+
+    # 用 channel_id 篩選 main 表資料
     df_selected = df[df['channel'] == selected_channel].copy()
 
     # 平均觀看數（排除 <10）
@@ -81,21 +85,44 @@ if view_mode == "單一頻道":
     df_yt_summary = pd.merge(df_yt_summary, df_stream[['id', 'name']], how='left', left_on='直播ID', right_on='id')
     df_tw_summary = pd.merge(df_tw_summary, df_stream[['id', 'name']], how='left', left_on='直播ID', right_on='id')
 
-    # 顯示 YouTube 統計（拆成三欄）
+    # 欄位顯示順序與映射
+    col_name_map = {
+        '直播ID': '直播ID',
+        '平均觀看數': '平均觀看數',
+        '最大觀看數': '最大觀看數',
+        '最小觀看數': '最小觀看數',
+        '資料筆數': '資料筆數',
+        '日期': '日期',
+        '開始時間': '開始時間_str',
+        '結束時間': '結束時間_str',
+        '直播名稱': 'name',
+    }
+    # 固定順序的顯示名稱
+    fixed_order = list(col_name_map.keys())
+
+    # 勾選欄位（但順序不變）
+    selected_display_names = st.multiselect("📋 選擇要顯示的欄位", fixed_order, default=fixed_order)
+
+    # 按固定順序篩選欄位
+    final_display_names = [col for col in fixed_order if col in selected_display_names]
+    final_df_columns = [col_name_map[col] for col in final_display_names]
+
+    # 顯示表格
     st.markdown("### 📺 YouTube 直播統計")
     st.dataframe(
-        df_yt_summary[[
-            '直播ID', '平均觀看數', '最大觀看數', '最小觀看數',
-            '資料筆數', '日期', '開始時間_str', '結束時間_str', 'name'
-        ]].rename(columns={
+        df_yt_summary[final_df_columns]
+        .rename(columns={
             'name': '直播名稱',
             '開始時間_str': '開始時間',
-            '結束時間_str': '結束時間',
-        }).style.format({
+            '結束時間_str': '結束時間'
+        })
+        .style
+        .format({
             "平均觀看數": "{:.1f}",
             "最大觀看數": "{:.0f}",
             "最小觀看數": "{:.0f}"
-        }),
+        })
+        .set_properties(**{'text-align': 'left'}),
         use_container_width=True
     )
 
@@ -120,18 +147,19 @@ if view_mode == "單一頻道":
     # 顯示 Twitch 統計（拆成三欄）
     st.markdown("### 🎮 Twitch 直播統計")
     st.dataframe(
-        df_tw_summary[[
-            '直播ID', '平均觀看數', '最大觀看數', '最小觀看數',
-            '資料筆數', '日期', '開始時間_str', '結束時間_str', 'name'
-        ]].rename(columns={
+        df_tw_summary[final_df_columns]
+        .rename(columns={
             'name': '直播名稱',
             '開始時間_str': '開始時間',
             '結束時間_str': '結束時間',
-        }).style.format({
+        })
+        .style
+        .format({
             "平均觀看數": "{:.1f}",
             "最大觀看數": "{:.0f}",
             "最小觀看數": "{:.0f}"
-        }),
+        })
+        .set_properties(**{'text-align': 'left'}),
         use_container_width=True
     )
 
