@@ -81,12 +81,23 @@ elif view_mode == "總觀看統計":
     # 過濾 main 表只保留出現在 streamer 的頻道
     df_filtered = df[df['channel'].isin(valid_channels)].copy()
 
+    # YouTube 直播場數計算（非0的 yt_number 計數）
+    yt_counts = df_filtered[df_filtered['yt_number'] != 0].groupby('channel')['yt_number'].nunique().rename('YouTube 直播場數')
+
+    # Twitch 直播場數計算（非0的 tw_number 計數）
+    tw_counts = df_filtered[df_filtered['tw_number'] != 0].groupby('channel')['tw_number'].nunique().rename('Twitch 直播場數')
+
+
     # 平均統計（先用 channel_id 為主）
     grouped = df_filtered.groupby('channel').agg(
         yt_avg=('youtube', lambda x: x[x >= 10].mean()),
         tw_avg=('twitch', lambda x: x[x >= 10].mean()),
         count=('datetime', 'count')
     ).reset_index()
+    
+    # 合併直播場數
+    grouped = grouped.merge(yt_counts, on='channel', how='left')
+    grouped = grouped.merge(tw_counts, on='channel', how='left')
 
     # merge streamer 表取得中文名
     grouped = grouped.merge(df_streamer, left_on='channel', right_on='channel_id', how='left')
@@ -98,9 +109,15 @@ elif view_mode == "總觀看統計":
     # 重新排序 index，讓前面數字正常
     grouped = grouped.reset_index(drop=True)
 
+    # 填補直播場數的 NaN 為 0
+    grouped['YouTube 直播場數'] = grouped['YouTube 直播場數'].fillna(0).astype(int)
+    grouped['Twitch 直播場數'] = grouped['Twitch 直播場數'].fillna(0).astype(int)
+
+
     # 選擇與顯示欄位
-    grouped = grouped[['channel_name', 'yt_avg', 'tw_avg', 'count']]
-    grouped.columns = ['頻道', 'YouTube 平均觀看數', 'Twitch 平均觀看數', '紀錄筆數']
+    grouped = grouped[['channel_name', 'yt_avg', 'tw_avg', 'count', 'YouTube 直播場數', 'Twitch 直播場數']]
+    grouped.columns = ['頻道', 'YouTube 平均觀看數', 'Twitch 平均觀看數', '紀錄筆數', 'YouTube 直播場數', 'Twitch 直播場數']
+
 
     st.dataframe(
         grouped.style.format({
