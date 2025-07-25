@@ -99,6 +99,24 @@ if view_mode == "單一頻道":
         use_container_width=True
     )
 
+    st.markdown("### ➕ 新增資料到 same_stream")
+
+    with st.form("add_same_stream_form", clear_on_submit=True):
+        col1, col2 = st.columns(2)
+        with col1:
+            from_id = st.number_input("來源 ID（from_id）", min_value=1, step=1)
+        with col2:
+            to_id = st.number_input("合併至 ID（to_id）", min_value=1, step=1)
+
+        submitted = st.form_submit_button("新增")
+        if submitted:
+            try:
+                with sqlite3.connect(db_path) as conn:
+                    conn.execute("INSERT INTO same_stream (from_id, to_id) VALUES (?, ?)", (from_id, to_id))
+                    st.success(f"✅ 已成功新增 from_id = {from_id} → to_id = {to_id}")
+            except Exception as e:
+                st.error(f"❌ 新增失敗：{e}")
+
     # 顯示 Twitch 統計（拆成三欄）
     st.markdown("### 🎮 Twitch 直播統計")
     st.dataframe(
