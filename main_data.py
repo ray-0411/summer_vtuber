@@ -42,7 +42,43 @@ col1, col2 = st.columns(2)
 col1.metric("📺 YouTube 平均觀看數", yt_avg_display)
 col2.metric("🎮 Twitch 平均觀看數", tw_avg_display)
 
-# 顯示該頻道的所有紀錄（可排序）
-st.subheader(f"{selected_channel} 的觀看紀錄")
-df_display = df_selected[['datetime', 'youtube', 'twitch', 'yt_number', 'tw_number']].sort_values('datetime')
-st.dataframe(df_display, use_container_width=True)
+st.subheader(f"{selected_channel} 的直播統計")
+
+# 分開處理 yt_number 和 tw_number
+df_youtube = df_selected[df_selected['yt_number'] != 0]
+df_twitch = df_selected[df_selected['tw_number'] != 0]
+
+# YouTube 統計
+df_yt_summary = df_youtube.groupby('yt_number').agg(
+    yt_avg=('youtube', lambda x: x[x >= 10].mean()),
+    count=('datetime', 'count'),
+    start_time=('datetime', 'min'),
+    end_time=('datetime', 'max')
+).reset_index()
+df_yt_summary.columns = ['YouTube 直播 ID', 'YouTube 平均觀看數', '筆數', '開始時間', '結束時間']
+
+# Twitch 統計
+df_tw_summary = df_twitch.groupby('tw_number').agg(
+    tw_avg=('twitch', lambda x: x[x >= 10].mean()),
+    count=('datetime', 'count'),
+    start_time=('datetime', 'min'),
+    end_time=('datetime', 'max')
+).reset_index()
+df_tw_summary.columns = ['Twitch 直播 ID', 'Twitch 平均觀看數', '筆數', '開始時間', '結束時間']
+
+# 顯示
+st.markdown("### 📺 YouTube 直播統計")
+st.dataframe(
+    df_yt_summary.style.format({
+        "YouTube 平均觀看數": "{:.1f}"
+    }),
+    use_container_width=True
+)
+
+st.markdown("### 🎮 Twitch 直播統計")
+st.dataframe(
+    df_tw_summary.style.format({
+        "Twitch 平均觀看數": "{:.1f}"
+    }),
+    use_container_width=True
+)
