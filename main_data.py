@@ -13,9 +13,24 @@ with sqlite3.connect(db_path) as conn:
     df = pd.read_sql_query("SELECT * FROM main", conn)
     df_streamer = pd.read_sql_query("SELECT * FROM streamer", conn)
     df_stream = pd.read_sql_query("SELECT * FROM stream", conn)
+    df_same_stream = pd.read_sql_query("SELECT * FROM same_stream", conn)
 
 # 合併日期與時間
 df['datetime'] = pd.to_datetime(df['date'] + ' ' + df['time'])
+
+# 建立 from_id -> to_id 映射字典
+same_stream_map = dict(zip(df_same_stream['from_id'], df_same_stream['to_id']))
+
+# 定義一個函數：如果直播ID在映射中，就轉成合併後的ID，否則維持原本ID
+def map_stream_id(stream_id):
+    return same_stream_map.get(stream_id, stream_id)
+
+# 轉換 df_yt_summary 直播ID
+df['yt_number'] = df['yt_number'].apply(map_stream_id)
+
+# Twitch 同理
+df['tw_number'] = df['tw_number'].apply(map_stream_id)
+
 
 # 🔽 檢視模式選單
 view_mode = st.selectbox("選擇檢視模式", ["總觀看統計","單一頻道"])
