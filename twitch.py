@@ -35,8 +35,14 @@ def twitch_capture_screenshot(target_url, save_path, driver=None,zoom=140):
         time.sleep(5)  
         """
         wait = WebDriverWait(driver, 10)
+        """
         wait.until(EC.presence_of_element_located((
             By.CSS_SELECTOR, "button[aria-label='更多選項'][title='更多選項']"
+        )))
+        """
+        wait.until(EC.presence_of_element_located((
+            By.CSS_SELECTOR,
+            "button[aria-label^='追隨 '][data-a-target='follow-button']"
         )))
         time.sleep(1) 
         

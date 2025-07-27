@@ -2,6 +2,8 @@ import sqlite3
 import pandas as pd
 import streamlit as st
 from st_aggrid import AgGrid, GridOptionsBuilder
+from datetime import datetime
+
 
 #streamlit run main_data.py
 
@@ -172,11 +174,16 @@ if view_mode == "單一頻道":
             from_id = st.number_input("來源 ID（from_id）", min_value=1, step=1)
         with col2:
             to_id = st.number_input("合併至 ID（to_id）", min_value=1, step=1)
+        
         if st.form_submit_button("新增"):
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # 取得現在時間字串
             try:
                 with sqlite3.connect(db_path) as conn:
-                    conn.execute("INSERT INTO same_stream (from_id, to_id) VALUES (?, ?)", (from_id, to_id))
-                    st.success(f"✅ 已成功新增 from_id = {from_id} → to_id = {to_id}")
+                    conn.execute(
+                        "INSERT INTO same_stream (from_id, to_id, time) VALUES (?, ?, ?)",
+                        (from_id, to_id, now)
+                    )
+                    st.success(f"✅ 已成功新增 from_id = {from_id} → to_id = {to_id}（{now}）")
             except Exception as e:
                 st.error(f"❌ 新增失敗：{e}")
 
