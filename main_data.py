@@ -1,6 +1,7 @@
 import sqlite3
 import pandas as pd
 import streamlit as st
+from st_aggrid import AgGrid, GridOptionsBuilder
 
 #streamlit run main_data.py
 
@@ -18,6 +19,9 @@ df['datetime'] = pd.to_datetime(df['date'] + ' ' + df['time'])
 
 # 🔽 檢視模式選單
 view_mode = st.selectbox("選擇檢視模式", ["總觀看統計","單一頻道"])
+
+# view_mode預設(debug用)
+view_mode = "單一頻道"  
 
 # ---------- 單一頻道模式 ----------
 if view_mode == "單一頻道":
@@ -68,20 +72,14 @@ if view_mode == "單一頻道":
     ).reset_index()
     df_tw_summary.columns = ['直播ID', '平均觀看數', '最大觀看數', '最小觀看數', '資料筆數', '開始時間', '結束時間']
 
-    # 轉成字串欄位，方便顯示
-    df_yt_summary['日期'] = df_yt_summary['開始時間'].dt.strftime("%Y-%m-%d").fillna("")
-    df_yt_summary['開始時間_str'] = df_yt_summary['開始時間'].dt.strftime("%H:%M").fillna("")
-    df_yt_summary['結束時間_str'] = df_yt_summary['結束時間'].dt.strftime("%H:%M").fillna("")
+    # 加上時間字串欄位
+    for df_summary in [df_yt_summary, df_tw_summary]:
+        df_summary['日期'] = df_summary['開始時間'].dt.strftime("%Y-%m-%d").fillna("")
+        df_summary['開始時間_str'] = df_summary['開始時間'].dt.strftime("%H:%M").fillna("")
+        df_summary['結束時間_str'] = df_summary['結束時間'].dt.strftime("%H:%M").fillna("")
+        df_summary.drop(columns=['開始時間', '結束時間'], inplace=True)
 
-    df_tw_summary['日期'] = df_tw_summary['開始時間'].dt.strftime("%Y-%m-%d").fillna("")
-    df_tw_summary['開始時間_str'] = df_tw_summary['開始時間'].dt.strftime("%H:%M").fillna("")
-    df_tw_summary['結束時間_str'] = df_tw_summary['結束時間'].dt.strftime("%H:%M").fillna("")
-
-    # 刪除 datetime 原欄位（若還有）
-    df_yt_summary.drop(columns=['開始時間', '結束時間'], inplace=True)
-    df_tw_summary.drop(columns=['開始時間', '結束時間'], inplace=True)
-
-    # 合併直播名稱（stream表）
+    # 合併直播名稱
     df_yt_summary = pd.merge(df_yt_summary, df_stream[['id', 'name']], how='left', left_on='直播ID', right_on='id')
     df_tw_summary = pd.merge(df_tw_summary, df_stream[['id', 'name']], how='left', left_on='直播ID', right_on='id')
 
@@ -97,46 +95,69 @@ if view_mode == "單一頻道":
         '結束時間': '結束時間_str',
         '直播名稱': 'name',
     }
-    # 固定順序的顯示名稱
     fixed_order = list(col_name_map.keys())
-
-    # 勾選欄位（但順序不變）
     selected_display_names = st.multiselect("📋 選擇要顯示的欄位", fixed_order, default=fixed_order)
-
-    # 按固定順序篩選欄位
     final_display_names = [col for col in fixed_order if col in selected_display_names]
     final_df_columns = [col_name_map[col] for col in final_display_names]
 
-    # 顯示表格
+    # 顯示 YouTube 表格
     st.markdown("### 📺 YouTube 直播統計")
-    st.dataframe(
-        df_yt_summary[final_df_columns]
-        .rename(columns={
-            'name': '直播名稱',
-            '開始時間_str': '開始時間',
-            '結束時間_str': '結束時間'
-        })
-        .style
-        .format({
-            "平均觀看數": "{:.1f}",
-            "最大觀看數": "{:.0f}",
-            "最小觀看數": "{:.0f}"
-        })
-        .set_properties(**{'text-align': 'left'}),
-        use_container_width=True
+    df_yt_display = df_yt_summary[final_df_columns].rename(columns={
+        'name': '直播名稱',
+        '開始時間_str': '開始時間',
+        '結束時間_str': '結束時間',
+    })
+    
+    if '平均觀看數' in df_yt_display.columns:
+        df_yt_display['平均觀看數'] = df_yt_display['平均觀看數'].round(1)
+
+    if '最大觀看數' in df_yt_display.columns:
+        df_yt_display['最大觀看數'] = df_yt_display['最大觀看數'].astype(int)
+
+    if '最小觀看數' in df_yt_display.columns:
+        df_yt_display['最小觀看數'] = df_yt_display['最小觀看數'].astype(int)
+
+    gb = GridOptionsBuilder.from_dataframe(df_yt_display)
+    gb.configure_default_column(
+        editable=False, 
+        groupable=False, 
+        filter=False, 
+        resizable=True, 
+        sortable=True,
+    )
+    for col, width in zip(["直播ID", "平均觀看數", "最大觀看數", "最小觀看數", "資料筆數", "日期", "開始時間", "結束時間", "直播名稱"],
+                        [100, 100, 100, 100, 100, 100, 100, 100, 1500]):
+        if col in df_yt_display.columns:
+            gb.configure_column(col, width=width, filter=False)
+    
+    
+    AgGrid(
+        df_yt_display,
+        gridOptions=gb.build(),
+        enable_enterprise_modules=False,
+        fit_columns_on_grid_load=False,
+        theme='balham',
+        height=300,
+        width='100%',
+        custom_css={
+            ".ag-header-cell-label": {
+                "justify-content": "flex-start",  # 表頭靠左
+            },
+            ".ag-cell": {
+                "text-align": "left",  # 儲存格靠左
+            },
+        },
     )
 
+    # 新增 same_stream 表單
     st.markdown("### ➕ 新增資料到 same_stream")
-
     with st.form("add_same_stream_form", clear_on_submit=True):
         col1, col2 = st.columns(2)
         with col1:
             from_id = st.number_input("來源 ID（from_id）", min_value=1, step=1)
         with col2:
             to_id = st.number_input("合併至 ID（to_id）", min_value=1, step=1)
-
-        submitted = st.form_submit_button("新增")
-        if submitted:
+        if st.form_submit_button("新增"):
             try:
                 with sqlite3.connect(db_path) as conn:
                     conn.execute("INSERT INTO same_stream (from_id, to_id) VALUES (?, ?)", (from_id, to_id))
@@ -144,26 +165,46 @@ if view_mode == "單一頻道":
             except Exception as e:
                 st.error(f"❌ 新增失敗：{e}")
 
-    # 顯示 Twitch 統計（拆成三欄）
+    # 顯示 Twitch 表格
     st.markdown("### 🎮 Twitch 直播統計")
-    st.dataframe(
-        df_tw_summary[final_df_columns]
-        .rename(columns={
-            'name': '直播名稱',
-            '開始時間_str': '開始時間',
-            '結束時間_str': '結束時間',
-        })
-        .style
-        .format({
-            "平均觀看數": "{:.1f}",
-            "最大觀看數": "{:.0f}",
-            "最小觀看數": "{:.0f}"
-        })
-        .set_properties(**{'text-align': 'left'}),
-        use_container_width=True
+    df_tw_display = df_tw_summary[final_df_columns].rename(columns={
+        'name': '直播名稱',
+        '開始時間_str': '開始時間',
+        '結束時間_str': '結束時間',
+    })
+    
+    if '平均觀看數' in df_tw_display.columns:
+        df_tw_display['平均觀看數'] = df_tw_display['平均觀看數'].round(1)
+    if '最大觀看數' in df_tw_display.columns:
+        df_tw_display['最大觀看數'] = df_tw_display['最大觀看數'].astype(int)
+    if '最小觀看數' in df_tw_display.columns:
+        df_tw_display['最小觀看數'] = df_tw_display['最小觀看數'].astype(int)
+
+    gb2 = GridOptionsBuilder.from_dataframe(df_tw_display)
+    gb2.configure_default_column(editable=False, groupable=False, filter=False, resizable=True, sortable=True)
+    for col, width in zip(["直播ID", "平均觀看數", "最大觀看數", "最小觀看數", "資料筆數", "日期", "開始時間", "結束時間", "直播名稱"],
+                        [100, 100, 100, 100, 100, 100, 100, 100, 1500]):
+        if col in df_tw_display.columns:
+            gb2.configure_column(col, width=width, filter=False)
+
+    AgGrid(
+        df_tw_display,
+        gridOptions=gb2.build(),
+        enable_enterprise_modules=False,
+        fit_columns_on_grid_load=False,
+        theme='balham',
+        height=300,
+        width='100%',
+        custom_css={
+            ".ag-header-cell-label": {
+                "justify-content": "flex-start",  # 表頭靠左
+            },
+            ".ag-cell": {
+                "text-align": "left",  # 儲存格靠左
+            },
+        },
     )
-
-
+    
 # ---------- 總統計模式 ----------
 elif view_mode == "總觀看統計":
     st.subheader("📊 所有頻道的平均觀看統計")
