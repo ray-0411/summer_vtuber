@@ -38,7 +38,7 @@ df['tw_number'] = df['tw_number'].apply(map_stream_id)
 view_mode = st.selectbox("選擇檢視模式", ["總觀看統計","單一頻道"])
 
 # view_mode預設(debug用)
-view_mode = "單一頻道"  
+#view_mode = "單一頻道"  
 
 # ---------- 單一頻道模式 ----------
 if view_mode == "單一頻道":
@@ -164,6 +164,7 @@ if view_mode == "單一頻道":
                 "text-align": "left",  # 儲存格靠左
             },
         },
+        key="youtube_table"
     )
 
     # 新增 same_stream 表單
@@ -225,6 +226,7 @@ if view_mode == "單一頻道":
                 "text-align": "left",  # 儲存格靠左
             },
         },
+        key="twitch_table"
     )
     
 # ---------- 總統計模式 ----------

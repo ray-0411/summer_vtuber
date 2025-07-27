@@ -24,21 +24,24 @@ from sql import (
 
 if __name__ == "__main__":
     
-    test_yt_url = "https://www.youtube.com/@ItsukiIanvs/streams"  # 替換為實際的 YouTube 直播連結
-    test_twitch_url = "https://www.twitch.tv/kirali_neon"  # 替換為實際的 Twitch 直播連結
-    test_save_path = f"test/test_capture.png"
-    crop_path = "test/test_crop.png"
+    
+    import_streamers_from_csv("copy_and_other/channels.csv", "data.db")
+    
+    # test_yt_url = "https://www.youtube.com/@ItsukiIanvs/streams"  # 替換為實際的 YouTube 直播連結
+    # test_twitch_url = "https://www.twitch.tv/kirali_neon"  # 替換為實際的 Twitch 直播連結
+    # test_save_path = f"test/test_capture.png"
+    # crop_path = "test/test_crop.png"
     
     
-    options = Options()
-    options.add_argument('--headless')
-    options.add_argument('--disable-gpu')
-    options.add_argument('--window-size=2560,1440')
-    options.add_argument('--mute-audio')
-    driver = webdriver.Chrome(options=options)
+    # options = Options()
+    # options.add_argument('--headless')
+    # options.add_argument('--disable-gpu')
+    # options.add_argument('--window-size=2560,1440')
+    # options.add_argument('--mute-audio')
+    # driver = webdriver.Chrome(options=options)
     
-    OCR_READER = easyocr.Reader(['ch_tra', 'en'])
-    DB_PATH = "data.db"
+    # OCR_READER = easyocr.Reader(['ch_tra', 'en'])
+    # DB_PATH = "data.db"
     
     # youtube_capture_screenshot(test_yt_url, test_save_path, driver)
     # nouse,find_x,find_y = youtube_find_and_crop(test_save_path, "find/yt_find.png", crop_path,45,crop_height=100,crop_width=420)
@@ -53,13 +56,13 @@ if __name__ == "__main__":
     
     #print(get_channel_name_by_id("mizuki", DB_PATH))
     
-    twitch_capture_screenshot(test_twitch_url, test_save_path, driver,140)
-    twitch_find_and_crop(test_save_path, "find/tw_find_2.png", crop_path,
-                    offset_x=-1490,offset_y=-20, crop_height=100, crop_width=1200)
+    # twitch_capture_screenshot(test_twitch_url, test_save_path, driver,140)
+    # twitch_find_and_crop(test_save_path, "find/tw_find_2.png", crop_path,
+    #                 offset_x=-1490,offset_y=-20, crop_height=100, crop_width=1200)
     
-    twitch_extract_viewer_count(crop_path,OCR_READER)
+    # twitch_extract_viewer_count(crop_path,OCR_READER)
     
-    #100 -150 0 100 25
+    # #100 -150 0 100 25
     
-    driver.quit()  # 關閉瀏覽器
+    # driver.quit()  # 關閉瀏覽器
     

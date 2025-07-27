@@ -44,7 +44,7 @@ def twitch_capture_screenshot(target_url, save_path, driver=None,zoom=140):
             By.CSS_SELECTOR,
             "button[aria-label^='追隨 '][data-a-target='follow-button']"
         )))
-        time.sleep(1) 
+        time.sleep(3) 
         
         # 設定縮放為 130%
         driver.execute_script(f"document.body.style.zoom='{zoom}%'")
