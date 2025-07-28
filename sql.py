@@ -313,7 +313,7 @@ def insert_working(start,finish, timer,id,kind,create):
                 WHERE id = ?
             ''', (fin_text, timer, create, id))  # 假設只更新第一筆資料
             conn.commit()
-            print("✅ 成功更新 streamer 紀錄")
+            print("✅ 成功更新 working 紀錄")
         except sqlite3.Error as e:
             print(f"❌ 更新失敗：{e}")
         finally:

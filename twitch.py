@@ -9,6 +9,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 
 
 def twitch_capture_screenshot(target_url, save_path, driver=None,zoom=140):
@@ -26,25 +27,44 @@ def twitch_capture_screenshot(target_url, save_path, driver=None,zoom=140):
         own_driver = True
 
     try:
+        """
         driver.get(target_url)
-        #time.sleep(3)  # 等網頁載入，可視情況增減
-        """
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.TAG_NAME, "body"))
-        )
-        time.sleep(5)  
-        """
+        
         wait = WebDriverWait(driver, 10)
-        """
-        wait.until(EC.presence_of_element_located((
-            By.CSS_SELECTOR, "button[aria-label='更多選項'][title='更多選項']"
-        )))
-        """
-        wait.until(EC.presence_of_element_located((
+        
+        element = wait.until(EC.presence_of_element_located((
             By.CSS_SELECTOR,
             "button[aria-label^='追隨 '][data-a-target='follow-button']"
         )))
-        time.sleep(3) 
+        time.sleep(3)
+        
+        if element:
+            print("追隨按鈕已載入")
+        else:
+            print("❌ 追隨按鈕未載入，可能不是直播頁面")
+        """
+        MAX_RETRIES = 3
+        retry_count = 0
+
+        while retry_count < MAX_RETRIES:
+            try:
+                driver.get(target_url)
+                wait = WebDriverWait(driver, 10)
+                element = wait.until(EC.presence_of_element_located((
+                    By.CSS_SELECTOR,
+                    "button[aria-label^='追隨 '][data-a-target='follow-button']"
+                )))
+                print("✅ 追隨按鈕已載入")
+                #ㄋtime.sleep(1)
+                break  # 找到了就跳出迴圈
+
+            except TimeoutException:
+                retry_count += 1
+                print(f"⚠️ 第 {retry_count} 次失敗，重新載入網頁...")
+
+        else:
+            print("❌ 重試多次仍找不到追隨按鈕，可能不是直播頁面或 DOM 結構改了")
+        
         
         # 設定縮放為 130%
         driver.execute_script(f"document.body.style.zoom='{zoom}%'")
