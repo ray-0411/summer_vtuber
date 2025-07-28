@@ -93,21 +93,49 @@ def tw_part(log, cid, name, tw_url , driver):
     template_path = "find/tw_find_2.png"
     template_path_2 = "find/tw_find_1.png"
     
-    # 步驟 1：截圖網頁
-    if not twitch_capture_screenshot(tw_url, screenshot_path,driver):
-        log("❌ 截圖失敗，略過此頻道")
-        return 0 ,False
     
-    # 步驟 2：裁切圖片和確認是否再開台
-    tw_find_and_crop_rt = twitch_find_and_crop(screenshot_path, template_path, cropped_path)
-    if tw_find_and_crop_rt==1:
-        log(f"❌ {name} twitch沒在開台")
-        return 0 ,False
-    elif tw_find_and_crop_rt==2:
-        log("❌ 圖片開啟失敗")
-        return 0 ,False
-    log(f"✅ {name} twitch正在開台")
-    
+    max_retries = 3
+    retry_count = 0
+    success = False
+
+    while retry_count < max_retries:
+        # 步驟 1：截圖
+        if not twitch_capture_screenshot(tw_url, screenshot_path, driver):
+            log("❌ 截圖失敗，略過此頻道")
+            return 0, False  
+
+        # 步驟 2：先比對 path1（開台畫面）
+        rt1 = twitch_find_and_crop(screenshot_path, template_path, cropped_path)
+        
+        if rt1 == 0:
+            log(f"✅ {name} twitch正在開台")
+            success = True
+            break
+
+        elif rt1 == 2:
+            log("❌ 圖片開啟失敗（path1）")
+            return 0, False
+
+        # 若 rt1 == 1，進入第二層判斷，用 path2（沒開台畫面）確認
+        rt2 = twitch_find_and_crop(screenshot_path, template_path_2, cropped_path)
+        
+        if rt2 == 0:
+            log(f"❌ {name} twitch沒在開台")
+            return 0, False
+
+        elif rt2 == 2:
+            log("❌ 圖片開啟失敗（path2）")
+            return 0, False
+
+        # 兩個都沒找到，屬於畫面異常，重試
+        log("⚠️ 無法確認開台狀態，重新截圖中...")
+        retry_count += 1
+
+    if not success:
+        log(f"❌ {name} twitch疑似開台但畫面錯誤（已重試 {max_retries} 次）")
+        return 0, False
+
+
     # 步驟 3：OCR 提取觀看人數
     tw_count = twitch_extract_viewer_count(cropped_path, OCR_READER)
     tw_count = int(tw_count) # 確保是整數

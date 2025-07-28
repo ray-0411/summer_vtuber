@@ -203,7 +203,7 @@ def twitch_extract_viewer_count(cropped_image_path, OCR_READER=None):
         
         numbers = re.findall(r"\d+", cleaned_text)
         
-        if numbers[0] == '9':
+        if numbers[0] == '9' or numbers[0] == '8':
             match = numbers[1]
         elif len(numbers[0]) > 1 :
             if numbers[0][0] == '9':
