@@ -43,19 +43,19 @@ def twitch_capture_screenshot(target_url, save_path, driver=None,zoom=140):
         else:
             print("❌ 追隨按鈕未載入，可能不是直播頁面")
         """
-        MAX_RETRIES = 3
+        MAX_RETRIES = 2
         retry_count = 0
 
         while retry_count < MAX_RETRIES:
             try:
                 driver.get(target_url)
-                wait = WebDriverWait(driver, 10)
+                wait = WebDriverWait(driver, 15)
                 element = wait.until(EC.presence_of_element_located((
                     By.CSS_SELECTOR,
                     "button[aria-label^='追隨 '][data-a-target='follow-button']"
                 )))
                 print("✅ 追隨按鈕已載入")
-                #ㄋtime.sleep(1)
+                time.sleep(3)
                 break  # 找到了就跳出迴圈
 
             except TimeoutException:

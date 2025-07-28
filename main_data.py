@@ -143,7 +143,7 @@ if view_mode == "單一頻道":
         sortable=True,
     )
     for col, width in zip(["直播ID", "平均觀看數", "最大觀看數", "最小觀看數", "資料筆數", "日期", "開始時間", "結束時間", "直播名稱"],
-                        [100, 100, 100, 100, 100, 100, 100, 100, 1500]):
+                        [100, 100, 100, 100, 100, 120, 100, 100, 1500]):
         if col in df_yt_display.columns:
             gb.configure_column(col, width=width, filter=False)
     
@@ -206,7 +206,7 @@ if view_mode == "單一頻道":
     gb2 = GridOptionsBuilder.from_dataframe(df_tw_display)
     gb2.configure_default_column(editable=False, groupable=False, filter=False, resizable=True, sortable=True)
     for col, width in zip(["直播ID", "平均觀看數", "最大觀看數", "最小觀看數", "資料筆數", "日期", "開始時間", "結束時間", "直播名稱"],
-                        [100, 100, 100, 100, 100, 100, 100, 100, 1500]):
+                        [100, 100, 100, 100, 100, 120, 100, 100, 1500]):
         if col in df_tw_display.columns:
             gb2.configure_column(col, width=width, filter=False)
 

@@ -91,6 +91,7 @@ def tw_part(log, cid, name, tw_url , driver):
     screenshot_path = f"pictures/tw_picture/{cid}_capture.png"
     cropped_path = f"pictures/tw_crop/{cid}_crop.png"
     template_path = "find/tw_find_2.png"
+    template_path_2 = "find/tw_find_1.png"
     
     # 步驟 1：截圖網頁
     if not twitch_capture_screenshot(tw_url, screenshot_path,driver):
