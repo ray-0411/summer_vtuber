@@ -10,6 +10,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
+import pytesseract
+from PIL import Image
 
 def youtube_capture_screenshot(target_url, save_path,driver=None):
     """
@@ -212,6 +214,40 @@ def youtube_extract_name(cropped_image_path,OCR_READER=None):
     except Exception as e:
         print(f"❌ OCR 處理時發生錯誤：{e}")
         return -1
+
+
+def youtube_extract_name_2(cropped_image_path):
+    """
+    使用 Tesseract OCR 從裁切的圖片中提取頻道名稱或觀看人數等文字
+    支援中英日混雜辨識。
+    """
+    print("📖 開始 Tesseract 文字識別...")
+
+    pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+    
+    try:
+        # 讀取圖片
+        img = Image.open(cropped_image_path)
+
+        # 使用 tesseract 進行 OCR（支援繁體中文、日文、英文）
+        text = pytesseract.image_to_string(img, lang="chi_tra+jpn+eng")
+
+        print("OCR 原始結果：", text)
+
+        # 清理字串（移除特殊符號、換行）
+        cleaned = text.strip().replace('\n', ' ')
+        cleaned = re.sub(r'\s{2,}', ' ', cleaned)
+
+        if cleaned:
+            return cleaned
+        else:
+            print("❌ 沒找到任何文字")
+            return -1
+
+    except Exception as e:
+        print(f"❌ OCR 處理時發生錯誤：{e}")
+        return -2
+
 
 
 def youtube_click_for_link(driver,first_link,x,y):

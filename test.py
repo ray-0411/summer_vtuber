@@ -13,7 +13,8 @@ from youtube import (
 from twitch import (
     twitch_capture_screenshot,
     twitch_find_and_crop,
-    twitch_extract_viewer_count
+    twitch_extract_viewer_count,
+    twitch_extract_name_2
 )   
 
 from sql import (
@@ -29,9 +30,9 @@ if __name__ == "__main__":
     
     # test_yt_url = "https://www.youtube.com/@ItsukiIanvs/streams"  # 替換為實際的 YouTube 直播連結
     # test_twitch_url = "https://www.twitch.tv/kirali_neon"  # 替換為實際的 Twitch 直播連結
-    test_save_path = f"pictures/tw_picture/mizuki_capture.png"
-    crop_path = "test/test_crop.png"
-    
+    #test_save_path = f"pictures/tw_picture/mizuki_capture.png"
+    #crop_path = "test/test_crop.png"
+    crop_path = "test/japanese_title.png"
     
     # options = Options()
     # options.add_argument('--headless')
@@ -57,10 +58,12 @@ if __name__ == "__main__":
     #print(get_channel_name_by_id("mizuki", DB_PATH))
     
     # twitch_capture_screenshot(test_twitch_url, test_save_path, driver,140)
-    twitch_find_and_crop(test_save_path, "find/tw_find_1.png", crop_path,
-                    offset_x=-1490,offset_y=-20, crop_height=100, crop_width=1200)
+    # twitch_find_and_crop(test_save_path, "find/tw_find_1.png", crop_path,
+    #                 offset_x=-1490,offset_y=-20, crop_height=100, crop_width=1200)
     
     # twitch_extract_viewer_count(crop_path,OCR_READER)
+    
+    twitch_extract_name_2(crop_path)
     
     # #100 -150 0 100 25
     
