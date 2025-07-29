@@ -35,7 +35,7 @@ df['tw_number'] = df['tw_number'].apply(map_stream_id)
 
 
 # 🔽 檢視模式選單
-view_mode = st.selectbox("選擇檢視模式", ["總觀看統計","單一頻道"])
+view_mode = st.selectbox("選擇檢視模式", ["總觀看統計","單一頻道", "全部頻道影片"])
 
 # view_mode預設(debug用)
 #view_mode = "單一頻道"  
@@ -285,3 +285,116 @@ elif view_mode == "總觀看統計":
         }),
         use_container_width=True
     )
+
+# ---------- 全部頻道影片模式 ----------
+elif view_mode == "全部頻道影片":
+    st.subheader("🎥 所有頻道影片一覽")
+
+    # 濾除無意義資料（直播編號 = 0）
+    df_youtube = df[df['yt_number'] != 0].copy()
+    df_twitch = df[df['tw_number'] != 0].copy()
+
+    # YouTube 統計
+    df_yt_summary = df_youtube.groupby('yt_number').agg(
+        yt_avg=('youtube', lambda x: x[x >= 10].mean()),
+        yt_max=('youtube', lambda x: x[x >= 10].max()),
+        yt_min=('youtube', lambda x: x[x >= 10].min()),
+        count=('datetime', 'count'),
+        start_time=('datetime', 'min'),
+        end_time=('datetime', 'max'),
+        channel=('channel', 'first')
+    ).reset_index()
+    df_yt_summary.columns = ['直播ID', '平均觀看數', '最大觀看數', '最小觀看數', '資料筆數', '開始時間', '結束時間', 'channel_id']
+    df_yt_summary = pd.merge(df_yt_summary, df_stream[['id', 'name']], how='left', left_on='直播ID', right_on='id')
+    df_yt_summary = pd.merge(df_yt_summary, df_streamer[['channel_id', 'channel_name']], how='left', on='channel_id')
+
+    # Twitch 統計
+    df_tw_summary = df_twitch.groupby('tw_number').agg(
+        tw_avg=('twitch', lambda x: x[x >= 10].mean()),
+        tw_max=('twitch', lambda x: x[x >= 10].max()),
+        tw_min=('twitch', lambda x: x[x >= 10].min()),
+        count=('datetime', 'count'),
+        start_time=('datetime', 'min'),
+        end_time=('datetime', 'max'),
+        channel=('channel', 'first')
+    ).reset_index()
+    df_tw_summary.columns = ['直播ID', '平均觀看數', '最大觀看數', '最小觀看數', '資料筆數', '開始時間', '結束時間', 'channel_id']
+    df_tw_summary = pd.merge(df_tw_summary, df_stream[['id', 'name']], how='left', left_on='直播ID', right_on='id')
+    df_tw_summary = pd.merge(df_tw_summary, df_streamer[['channel_id', 'channel_name']], how='left', on='channel_id')
+
+    # 加入日期與時間格式欄位
+    for df_summary in [df_yt_summary, df_tw_summary]:
+        df_summary['日期'] = df_summary['開始時間'].dt.strftime("%Y-%m-%d").fillna("")
+        df_summary['開始時間_str'] = df_summary['開始時間'].dt.strftime("%H:%M").fillna("")
+        df_summary['結束時間_str'] = df_summary['結束時間'].dt.strftime("%H:%M").fillna("")
+        df_summary.drop(columns=['開始時間', '結束時間'], inplace=True)
+
+    # 欄位順序與名稱
+    col_name_map = {
+        '直播ID': '直播ID',
+        '頻道名稱': 'channel_name',
+        '平均觀看數': '平均觀看數',
+        '最大觀看數': '最大觀看數',
+        '最小觀看數': '最小觀看數',
+        '資料筆數': '資料筆數',
+        '日期': '日期',
+        '開始時間': '開始時間_str',
+        '結束時間': '結束時間_str',
+        '直播名稱': 'name',
+    }
+    fixed_order = list(col_name_map.keys())
+    selected_display_names = st.multiselect("📋 選擇要顯示的欄位", fixed_order, default=fixed_order)
+    final_display_names = [col for col in fixed_order if col in selected_display_names]
+    final_df_columns = [col_name_map[col] for col in final_display_names]
+
+    # YouTube 表格
+    st.markdown("### 📺 YouTube 直播統計（全部頻道）")
+    df_yt_display = df_yt_summary[final_df_columns].rename(columns={
+        'channel_name': '頻道名稱',
+        'name': '直播名稱',
+        '開始時間_str': '開始時間',
+        '結束時間_str': '結束時間',
+    })
+
+    if '平均觀看數' in df_yt_display.columns:
+        df_yt_display['平均觀看數'] = df_yt_display['平均觀看數'].round(1)
+    if '最大觀看數' in df_yt_display.columns:
+        df_yt_display['最大觀看數'] = df_yt_display['最大觀看數'].astype(int)
+    if '最小觀看數' in df_yt_display.columns:
+        df_yt_display['最小觀看數'] = df_yt_display['最小觀看數'].astype(int)
+
+    gb = GridOptionsBuilder.from_dataframe(df_yt_display)
+    gb.configure_default_column(editable=False, groupable=False, filter=False, resizable=True, sortable=True)
+    for col, width in zip(
+        ["直播ID", "平均觀看數", "最大觀看數", "最小觀看數", "資料筆數", "日期", "開始時間", "結束時間", "直播名稱", "頻道名稱"],
+        [100, 100, 100, 100, 100, 120, 100, 100, 1000, 100]
+    ):
+        if col in df_yt_display.columns:
+            gb.configure_column(col, width=width, filter=False)
+    AgGrid(df_yt_display, gridOptions=gb.build(), theme='balham', height=400, width='100%', key='yt_all_video')
+
+    # Twitch 表格
+    st.markdown("### 🎮 Twitch 直播統計（全部頻道）")
+    df_tw_display = df_tw_summary[final_df_columns].rename(columns={
+        'channel_name': '頻道名稱',
+        'name': '直播名稱',
+        '開始時間_str': '開始時間',
+        '結束時間_str': '結束時間',
+    })
+
+    if '平均觀看數' in df_tw_display.columns:
+        df_tw_display['平均觀看數'] = df_tw_display['平均觀看數'].round(1)
+    if '最大觀看數' in df_tw_display.columns:
+        df_tw_display['最大觀看數'] = df_tw_display['最大觀看數'].astype(int)
+    if '最小觀看數' in df_tw_display.columns:
+        df_tw_display['最小觀看數'] = df_tw_display['最小觀看數'].astype(int)
+
+    gb2 = GridOptionsBuilder.from_dataframe(df_tw_display)
+    gb2.configure_default_column(editable=False, groupable=False, filter=False, resizable=True, sortable=True)
+    for col, width in zip(
+        ["直播ID", "平均觀看數", "最大觀看數", "最小觀看數", "資料筆數", "日期", "開始時間", "結束時間", "直播名稱", "頻道名稱"],
+        [100, 100, 100, 100, 100, 120, 100, 100, 1000, 100]
+    ):
+        if col in df_tw_display.columns:
+            gb2.configure_column(col, width=width, filter=False)
+    AgGrid(df_tw_display, gridOptions=gb2.build(), theme='balham', height=400, width='100%', key='tw_all_video')
