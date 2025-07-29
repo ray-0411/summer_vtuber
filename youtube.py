@@ -13,6 +13,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 import pytesseract
 from PIL import Image
 
+# 使用 Selenium 截取 YouTube 頁面截圖
 def youtube_capture_screenshot(target_url, save_path,driver=None):
     """
     使用 Selenium 截取 YouTube 頁面截圖
@@ -61,7 +62,7 @@ def youtube_capture_screenshot(target_url, save_path,driver=None):
             driver.quit()  # 只有自己產生的才關閉
 
 
-
+# 使用 OpenCV 尋找目標圖案並裁切指定區域
 def youtube_find_and_crop \
     (img_path, 
     template_path, 
@@ -142,6 +143,7 @@ def youtube_find_and_crop \
         print("❌ 沒找到符合的圖案")
         return 1,0,0
 
+# 使用 EasyOCR 提取觀看人數
 def youtube_extract_viewer_count(cropped_image_path,OCR_READER=None):
     """
     使用 EasyOCR 從裁切的圖片中提取觀看人數
@@ -175,7 +177,7 @@ def youtube_extract_viewer_count(cropped_image_path,OCR_READER=None):
         print(f"❌ OCR 處理時發生錯誤：{e}")
         return -2
 
-
+# easyocr 修正函式 用於 extract_viewer
 def clean_ocr_text(text):
     # 常見誤判修正表
     replacements = {
@@ -189,7 +191,7 @@ def clean_ocr_text(text):
     return ''.join(replacements.get(c, c) for c in text)
 
 
-
+# 使用 EasyOCR 提取頻道名稱(無使用)
 def youtube_extract_name(cropped_image_path,OCR_READER=None):
     """
     使用 EasyOCR 從裁切的圖片中提取觀看人數
@@ -215,7 +217,7 @@ def youtube_extract_name(cropped_image_path,OCR_READER=None):
         print(f"❌ OCR 處理時發生錯誤：{e}")
         return -1
 
-
+# 使用 Tesseract OCR 提取頻道名稱或觀看人數等文字
 def youtube_extract_name_2(cropped_image_path):
     """
     使用 Tesseract OCR 從裁切的圖片中提取頻道名稱或觀看人數等文字
@@ -249,7 +251,7 @@ def youtube_extract_name_2(cropped_image_path):
         return -2
 
 
-
+# 使用 Selenium 點擊影片取得連結
 def youtube_click_for_link(driver,first_link,x,y):
     
     try:

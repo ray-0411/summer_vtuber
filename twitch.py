@@ -13,7 +13,7 @@ from selenium.common.exceptions import TimeoutException
 import pytesseract
 from PIL import Image
 
-
+# 使用 Selenium 截取 Twitch 頁面截圖
 def twitch_capture_screenshot(target_url, save_path, driver=None,zoom=140):
     
     own_driver = False
@@ -93,6 +93,7 @@ def twitch_capture_screenshot(target_url, save_path, driver=None,zoom=140):
         if own_driver:
             driver.quit()  # 只有自己產生的才關閉
 
+# 使用 OpenCV 尋找目標圖案並裁切指定區域
 def twitch_find_and_crop \
     (img_path, 
     template_path, 
@@ -173,6 +174,7 @@ def twitch_find_and_crop \
         print("❌ 沒找到符合的圖案")
         return 1
 
+# 使用 EasyOCR 提取觀看人數
 def twitch_extract_viewer_count(cropped_image_path, OCR_READER=None):
     """
     使用 EasyOCR 從裁切的圖片中提取觀看人數
@@ -231,7 +233,7 @@ def twitch_extract_viewer_count(cropped_image_path, OCR_READER=None):
         print(f"❌ OCR 處理時發生錯誤：{e}")
         return -2
 
-
+#OCR 修正函式 用於extract_viewer
 def clean_ocr_text(text):
     # 常見誤判修正表
     replacements = {
@@ -244,6 +246,7 @@ def clean_ocr_text(text):
     }
     return ''.join(replacements.get(c, c) for c in text)
 
+#使用easyocr提取頻道名稱(已無使用)
 def twitch_extract_name(cropped_image_path, OCR_READER=None):
     """
     使用 EasyOCR 從裁切的圖片中提取觀看人數
@@ -275,6 +278,7 @@ def twitch_extract_name(cropped_image_path, OCR_READER=None):
         print(f"❌ OCR 處理時發生錯誤：{e}")
         return -2
 
+# 使用 Tesseract OCR 提取頻道名稱
 def twitch_extract_name_2(cropped_image_path):
     """
     使用 Tesseract OCR 從裁切的圖片中提取頻道名稱或觀看人數等文字

@@ -160,7 +160,7 @@ def tw_number_get(channel_id, args, db_path=DB_PATH):
 # type 0 為 YouTube，1 為 Twitch
 def is_straming(channel_id, type, db_path=DB_PATH):
     now = datetime.datetime.now()
-    time_30min_ago = now - datetime.timedelta(minutes=30)
+    time_30min_ago = now - datetime.timedelta(minutes=35)
 
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
