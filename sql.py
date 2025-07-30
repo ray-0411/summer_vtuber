@@ -212,7 +212,7 @@ def create_stream_yt\
     #youtube_capture_screenshot(test_yt_url, test_save_path, driver)
     nouse,find_x,find_y = youtube_find_and_crop\
     (args["screenshot_path"], args["template_path"], args["cropped_path"], 45,crop_height=100,crop_width=420)
-    name = youtube_extract_name_2(args["cropped_path"], args["OCR_READER"])
+    name = youtube_extract_name_2(args["cropped_path"])
     url = youtube_click_for_link(args["driver"],args["yt_url"],find_x,find_y)
     
     #name = "space"
@@ -252,7 +252,7 @@ def create_stream_tw\
     
     twitch_find_and_crop(args["screenshot_path"], "find/tw_find_2.png", args["cropped_path"],
                     offset_x=-1490,offset_y=-20, crop_height=100, crop_width=1200)
-    name = twitch_extract_name_2(args["cropped_path"],args["OCR_READER"])
+    name = twitch_extract_name_2(args["cropped_path"])
     url = "twitch"
     #name = "space"
     #url = "space"  
