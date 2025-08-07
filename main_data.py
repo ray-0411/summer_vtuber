@@ -281,25 +281,29 @@ elif view_mode == "總觀看統計":
     grouped = grouped[['channel_name', 'yt_avg', 'tw_avg', 'count', 'YouTube 直播場數', 'Twitch 直播場數']]
     grouped.columns = ['頻道', 'YouTube 平均觀看數', 'Twitch 平均觀看數', '紀錄筆數', 'YouTube 直播場數', 'Twitch 直播場數']
 
+    # 補0欄位
+    numeric_cols = ['YouTube 平均觀看數', 'Twitch 平均觀看數', '紀錄筆數', 'YouTube 直播場數', 'Twitch 直播場數']
+
+    # 先把這些欄位的 NaN 補成 0（數字型別）
+    grouped[numeric_cols] = grouped[numeric_cols].fillna(0)
+
+    # 如果有些欄位是空字串 "" 而非 NaN，轉成 NaN 再補 0
+    grouped[numeric_cols] = grouped[numeric_cols].replace("", pd.NA).fillna(0)
 
 
     # 四捨五入並轉成字串
-    grouped['YouTube 平均觀看數'] = grouped['YouTube 平均觀看數'].round(1).astype(str)
-    grouped['Twitch 平均觀看數'] = grouped['Twitch 平均觀看數'].round(1).astype(str)
-    grouped['紀錄筆數'] = grouped['紀錄筆數'].astype(str)
-    grouped['YouTube 直播場數'] = grouped['YouTube 直播場數'].astype(str)
-    grouped['Twitch 直播場數'] = grouped['Twitch 直播場數'].astype(str)
+    grouped['YouTube 平均觀看數'] = pd.to_numeric(grouped['YouTube 平均觀看數'], errors='coerce').round(1)
+    grouped['Twitch 平均觀看數'] = pd.to_numeric(grouped['Twitch 平均觀看數'], errors='coerce').round(1)
+
 
     # 新增流水號欄位（從 1 開始）
     grouped.insert(0, '編號', range(1, len(grouped) + 1))
     
-    # 將 NaN 轉為 "無資料"
-    grouped = grouped.replace("nan", "無資料")
     
     # AgGrid 設定（全欄位純文字、無 filter）
     gb = GridOptionsBuilder.from_dataframe(grouped)
     for col in grouped.columns:
-        gb.configure_column(col, type=['text'], filter=False, editable=False, sortable=True, resizable=True)
+        gb.configure_column(col, filter=False, editable=False, sortable=True, resizable=True)
 
 
     # 設定欄寬
