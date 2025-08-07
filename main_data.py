@@ -385,9 +385,9 @@ elif view_mode == "全部頻道影片":
     if '平均觀看數' in df_tw_display.columns:
         df_tw_display['平均觀看數'] = df_tw_display['平均觀看數'].round(1)
     if '最大觀看數' in df_tw_display.columns:
-        df_tw_display['最大觀看數'] = df_tw_display['最大觀看數'].astype(int)
+        df_tw_display['最大觀看數'] = pd.to_numeric(df_tw_display['最大觀看數'], errors='coerce').fillna(0).astype(int)
     if '最小觀看數' in df_tw_display.columns:
-        df_tw_display['最小觀看數'] = df_tw_display['最小觀看數'].astype(int)
+        df_tw_display['最小觀看數'] = pd.to_numeric(df_tw_display['最小觀看數'], errors='coerce').fillna(0).astype(int)
 
     gb2 = GridOptionsBuilder.from_dataframe(df_tw_display)
     gb2.configure_default_column(editable=False, groupable=False, filter=False, resizable=True, sortable=True)
