@@ -278,13 +278,36 @@ elif view_mode == "總觀看統計":
     grouped.columns = ['頻道', 'YouTube 平均觀看數', 'Twitch 平均觀看數', '紀錄筆數', 'YouTube 直播場數', 'Twitch 直播場數']
 
 
-    st.dataframe(
-        grouped.style.format({
-            "YouTube 平均觀看數": "{:.1f}",
-            "Twitch 平均觀看數": "{:.1f}"
-        }),
-        use_container_width=True
-    )
+
+    # 四捨五入並轉成字串
+    grouped['YouTube 平均觀看數'] = grouped['YouTube 平均觀看數'].round(1).astype(str)
+    grouped['Twitch 平均觀看數'] = grouped['Twitch 平均觀看數'].round(1).astype(str)
+    grouped['紀錄筆數'] = grouped['紀錄筆數'].astype(str)
+    grouped['YouTube 直播場數'] = grouped['YouTube 直播場數'].astype(str)
+    grouped['Twitch 直播場數'] = grouped['Twitch 直播場數'].astype(str)
+
+    # 新增流水號欄位（從 1 開始）
+    grouped.insert(0, '編號', range(1, len(grouped) + 1))
+    
+    # 將 NaN 轉為 "無資料"
+    grouped = grouped.replace("nan", "無資料")
+    
+    # AgGrid 設定（全欄位純文字、無 filter）
+    gb = GridOptionsBuilder.from_dataframe(grouped)
+    for col in grouped.columns:
+        gb.configure_column(col, type=['text'], filter=False, editable=False, sortable=True, resizable=True)
+
+
+    # 設定欄寬
+    for col, width in zip(
+        ["編號", "頻道", "YouTube 平均觀看數", "Twitch 平均觀看數", "紀錄筆數", "YouTube 直播場數", "Twitch 直播場數"],
+        [60, 150, 150, 150, 100, 150, 150]
+    ):
+        gb.configure_column(col, width=width)
+
+    # 顯示 AgGrid 表格
+    AgGrid(grouped, gridOptions=gb.build(), theme='balham', height=400, width='100%', key='avg_all_channel')
+
 
 # ---------- 全部頻道影片模式 ----------
 elif view_mode == "全部頻道影片":
