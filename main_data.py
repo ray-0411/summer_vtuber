@@ -6,7 +6,8 @@ from datetime import datetime
 
 from main_data_fun import (
     plot_time_distribution,
-    plot_time_count_distribution
+    plot_time_count_distribution,
+    plot_time_count_all_channels
 )
 
 #streamlit run main_data.py
@@ -463,3 +464,5 @@ elif view_mode == "全部頻道影片":
         if col in df_tw_display.columns:
             gb2.configure_column(col, width=width, filter=False)
     AgGrid(df_tw_display, gridOptions=gb2.build(), theme='balham', height=400, width='100%', key='tw_all_video')
+    
+    plot_time_count_all_channels(df)
