@@ -1,3 +1,7 @@
 pictures/
+!pictures/yt_icon/
+!pictures/yt_icon/**
+!pictures/tw_icon/
+!pictures/tw_icon/**
 __pycache__/
 test/
