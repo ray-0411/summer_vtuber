@@ -4,6 +4,7 @@ import streamlit as st
 from st_aggrid import AgGrid, GridOptionsBuilder
 from datetime import datetime
 
+from main_data_fun import plot_time_distribution  
 
 #streamlit run main_data.py
 
@@ -77,6 +78,8 @@ if view_mode == "單一頻道":
     ).reset_index()
     df_yt_summary.columns = ['直播ID', '平均觀看數', '最大觀看數', '最小觀看數', '資料筆數', '開始時間', '結束時間']
 
+    
+    
     # Twitch 統計
     df_twitch = df_selected[df_selected['tw_number'] != 0]
     df_tw_summary = df_twitch.groupby('tw_number').agg(
@@ -191,6 +194,9 @@ if view_mode == "單一頻道":
                         st.success(f"✅ 已成功新增 from_id = {from_id} → to_id = {to_id}（{now}）")
                 except Exception as e:
                     st.error(f"❌ 新增失敗：{e}")
+    
+    # 畫出時間分布圖
+    plot_time_distribution(df, selected_channel)
 
     # 顯示 Twitch 表格
     st.markdown("### 🎮 Twitch 直播統計")
