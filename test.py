@@ -1,6 +1,11 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import easyocr
+import streamlit as st
+import pandas as pd
+
+
+
 
 from youtube import (
     youtube_capture_screenshot,
@@ -23,6 +28,8 @@ from sql import (
     get_channel_name_by_id
 )
 
+from main_data_fun import plot_time_distribution  # 匯入函數
+
 if __name__ == "__main__":
     
     
@@ -32,7 +39,12 @@ if __name__ == "__main__":
     # test_twitch_url = "https://www.twitch.tv/kirali_neon"  # 替換為實際的 Twitch 直播連結
     #test_save_path = f"pictures/tw_picture/mizuki_capture.png"
     #crop_path = "test/test_crop.png"
-    crop_path = "test/japanese_title.png"
+    #crop_path = "test/japanese_title.png"
+    db_path = "data.db"
+    
+    # 假設 df_selected 已經篩選好
+    
+    #plot_time_distribution(df_selected, st)
     
     # options = Options()
     # options.add_argument('--headless')
@@ -63,7 +75,7 @@ if __name__ == "__main__":
     
     # twitch_extract_viewer_count(crop_path,OCR_READER)
     
-    twitch_extract_name_2(crop_path)
+    #twitch_extract_name_2(crop_path)
     
     # #100 -150 0 100 25
     

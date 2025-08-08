@@ -4,7 +4,10 @@ import streamlit as st
 from st_aggrid import AgGrid, GridOptionsBuilder
 from datetime import datetime
 
-from main_data_fun import plot_time_distribution  
+from main_data_fun import (
+    plot_time_distribution,
+    plot_time_count_distribution
+)
 
 #streamlit run main_data.py
 
@@ -197,6 +200,8 @@ if view_mode == "單一頻道":
     
     # 畫出時間分布圖
     plot_time_distribution(df, selected_channel)
+    
+    plot_time_count_distribution(df, selected_channel)
 
     # 顯示 Twitch 表格
     st.markdown("### 🎮 Twitch 直播統計")
