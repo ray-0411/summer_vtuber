@@ -49,8 +49,29 @@ if view_mode == "單一頻道":
     # 建立 name -> channel_id 的映射
     name_to_id = dict(zip(df_streamer['channel_name'], df_streamer['channel_id']))
 
-    # 選單顯示所有頻道名稱（streamer表中所有）
-    selected_name = st.selectbox("請選擇頻道", df_streamer['channel_name'].tolist())
+
+
+    # 你手動定義 group 的顯示順序（想要的順序）
+    group_order = ['全部', '子午', '春魚', '其他']
+
+    available_groups = df_streamer['group'].dropna().unique().tolist()
+    sorted_groups = [g for g in group_order if g in available_groups or g == '全部']
+
+    # 加入其他沒列出的群組（不含全部）
+    others = [g for g in available_groups if g not in group_order]
+    sorted_groups.extend(others)
+
+    selected_group = st.selectbox("請選擇群組", sorted_groups)
+
+    # 根據選擇的群組篩選頻道名稱
+    if selected_group == '全部':
+        filtered_channels = df_streamer['channel_name'].tolist()
+    else:
+        filtered_channels = df_streamer[df_streamer['group'] == selected_group]['channel_name'].tolist()
+        
+    selected_name = st.selectbox("請選擇頻道", filtered_channels)
+
+
 
     # 取得對應的 channel_id
     selected_channel = name_to_id[selected_name]
@@ -198,10 +219,7 @@ if view_mode == "單一頻道":
                 except Exception as e:
                     st.error(f"❌ 新增失敗：{e}")
     
-    # 畫出時間分布圖
-    plot_time_distribution(df, selected_channel)
     
-    plot_time_count_distribution(df, selected_channel)
 
     # 顯示 Twitch 表格
     st.markdown("### 🎮 Twitch 直播統計")
@@ -243,6 +261,11 @@ if view_mode == "單一頻道":
         },
         key="twitch_table"
     )
+    
+    # 畫出時間分布圖
+    plot_time_distribution(df, selected_channel)
+    
+    plot_time_count_distribution(df, selected_channel)
     
 # ---------- 總統計模式 ----------
 elif view_mode == "總觀看統計":
