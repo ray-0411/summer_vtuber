@@ -421,7 +421,9 @@ elif view_mode == "全部頻道影片":
         '開始時間_str': '開始時間',
         '結束時間_str': '結束時間',
     })
-
+    
+    if '直播ID' in df_yt_display.columns:
+        df_yt_display['直播ID'] = pd.to_numeric(df_yt_display['直播ID'], errors='coerce').fillna(0).astype(int)
     if '平均觀看數' in df_yt_display.columns:
         df_yt_display['平均觀看數'] = df_yt_display['平均觀看數'].round(1)
     if '最大觀看數' in df_yt_display.columns:
@@ -448,6 +450,8 @@ elif view_mode == "全部頻道影片":
         '結束時間_str': '結束時間',
     })
 
+    if '直播ID' in df_tw_display.columns:
+        df_tw_display['直播ID'] = pd.to_numeric(df_tw_display['直播ID'], errors='coerce').fillna(0).astype(int)
     if '平均觀看數' in df_tw_display.columns:
         df_tw_display['平均觀看數'] = df_tw_display['平均觀看數'].round(1)
     if '最大觀看數' in df_tw_display.columns:

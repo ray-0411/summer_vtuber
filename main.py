@@ -28,7 +28,7 @@ from sql import (
     insert_working
 )
 
-OCR_READER = easyocr.Reader(['ch_tra', 'en'])
+OCR_READER = easyocr.Reader(['ch_tra', 'en'], gpu=False)  
 DB_PATH = "data.db"
 
 
