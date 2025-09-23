@@ -433,13 +433,11 @@ elif view_mode == "全部頻道影片":
     if '資料筆數' in df_yt_display.columns:
         df_yt_display['資料筆數'] = pd.to_numeric(df_yt_display['資料筆數'], errors='coerce')
 
-    numeric_cols = ["直播ID", "平均觀看數", "最大觀看數", "最小觀看數", "資料筆數"]
-    for col in numeric_cols:
-        if col in df_yt_display.columns:
-            df_yt_display[col] = pd.to_numeric(df_yt_display[col], errors="coerce")
-
     gb = GridOptionsBuilder.from_dataframe(df_yt_display)
     gb.configure_default_column(editable=False, groupable=False, filter=False, resizable=True, sortable=True)
+    gb.configure_column("最大觀看數", type=["numericColumn"])
+    gb.configure_column("最小觀看數", type=["numericColumn"])
+    gb.configure_column("資料筆數", type=["numericColumn"])
     for col, width in zip(
         ["直播ID", "平均觀看數", "最大觀看數", "最小觀看數", "資料筆數", "日期", "開始時間", "結束時間", "直播名稱", "頻道名稱"],
         [100, 100, 100, 100, 100, 120, 100, 100, 1000, 100]
