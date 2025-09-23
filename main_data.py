@@ -431,6 +431,11 @@ elif view_mode == "全部頻道影片":
     if '最小觀看數' in df_yt_display.columns:
         df_yt_display['最小觀看數'] = df_yt_display['最小觀看數'].astype(int)
 
+    numeric_cols = ["直播ID", "平均觀看數", "最大觀看數", "最小觀看數", "資料筆數"]
+    for col in numeric_cols:
+        if col in df_yt_display.columns:
+            df_yt_display[col] = pd.to_numeric(df_yt_display[col], errors="coerce")
+
     gb = GridOptionsBuilder.from_dataframe(df_yt_display)
     gb.configure_default_column(editable=False, groupable=False, filter=False, resizable=True, sortable=True)
     for col, width in zip(
