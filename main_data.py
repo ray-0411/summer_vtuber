@@ -432,6 +432,13 @@ elif view_mode == "全部頻道影片":
         df_yt_display['最小觀看數'] = pd.to_numeric(df_yt_display['最小觀看數'], errors='coerce')
     if '資料筆數' in df_yt_display.columns:
         df_yt_display['資料筆數'] = pd.to_numeric(df_yt_display['資料筆數'], errors='coerce')
+        
+    # 在丟進 AgGrid 前強制轉成 float64
+    force_numeric_cols = ["直播ID", "平均觀看數", "最大觀看數", "最小觀看數", "資料筆數"]
+    for col in force_numeric_cols:
+        if col in df_yt_display.columns:
+            df_yt_display[col] = pd.to_numeric(df_yt_display[col], errors="coerce").astype("float64")
+
 
     gb = GridOptionsBuilder.from_dataframe(df_yt_display)
     gb.configure_default_column(editable=False, groupable=False, filter=False, resizable=True, sortable=True)
