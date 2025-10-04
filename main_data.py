@@ -159,6 +159,14 @@ if view_mode == "單一頻道":
         df_yt_display['最大觀看數'] = df_yt_display['最大觀看數'].fillna(0).astype(int)
     if '最小觀看數' in df_yt_display.columns:
         df_yt_display['最小觀看數'] = df_yt_display['最小觀看數'].fillna(0).astype(int)
+        
+    if '直播ID' in df_yt_display.columns:
+        df_yt_display['直播ID'] = pd.to_numeric(df_yt_display['直播ID'], errors='coerce').astype(float)
+
+    for col in ['最大觀看數', '最小觀看數']:
+        if col in df_yt_display.columns:
+            df_yt_display[col] = pd.to_numeric(df_yt_display[col], errors='coerce').astype(float)
+
 
     gb = GridOptionsBuilder.from_dataframe(df_yt_display)
     gb.configure_default_column(
@@ -234,6 +242,13 @@ if view_mode == "單一頻道":
         df_tw_display['最大觀看數'] = df_tw_display['最大觀看數'].fillna(0).astype(int)
     if '最小觀看數' in df_tw_display.columns:
         df_tw_display['最小觀看數'] = df_tw_display['最小觀看數'].fillna(0).astype(int)
+        
+    if '直播ID' in df_tw_display.columns:
+        df_tw_display['直播ID'] = pd.to_numeric(df_tw_display['直播ID'], errors='coerce').astype(float)
+
+    for col in ['最大觀看數', '最小觀看數']:
+        if col in df_tw_display.columns:
+            df_tw_display[col] = pd.to_numeric(df_tw_display[col], errors='coerce').astype(float)
 
     gb2 = GridOptionsBuilder.from_dataframe(df_tw_display)
     gb2.configure_default_column(editable=False, groupable=False, filter=False, resizable=True, sortable=True)
