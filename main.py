@@ -4,6 +4,7 @@ import sqlite3
 import easyocr
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+import subprocess
 
 
 from youtube import (
@@ -151,6 +152,31 @@ def tw_part(log, cid, name, tw_url , driver):
         return tw_count ,True
 
 
+def cleanup_headless_chrome():
+    """僅清理 Selenium 啟動的 headless Chrome 進程"""
+    try:
+        # 尋找所有帶 "--headless" 的 Chrome 進程
+        result = subprocess.run(
+            'wmic process where "name=\'chrome.exe\' and commandline like \'%%--headless%%\'" get processid',
+            shell=True, capture_output=True, text=True
+        )
+
+        # 擷取 process ID
+        pids = [pid.strip() for pid in result.stdout.split() if pid.strip().isdigit()]
+        if pids:
+            for pid in pids:
+                subprocess.run(f"taskkill /PID {pid} /F", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            print(f"🧹 已清理 {len(pids)} 個 headless Chrome 進程。")
+        else:
+            print("✅ 沒有發現殘留的 headless Chrome。")
+
+        # 一併清理殘留的 chromedriver
+        subprocess.run("taskkill /f /im chromedriver.exe", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception as e:
+        print(f"⚠️ 清理過程出錯：{e}")
+        
+        
+
 def main(log_callback=None,kind=0):
     """
     主函數：整合所有步驟
@@ -163,6 +189,8 @@ def main(log_callback=None,kind=0):
     init_db()
     
     working_id = insert_working(True,False,None,0,kind,0)  
+    
+    cleanup_headless_chrome()
     
     # 設定 Selenium WebDriver
     options = Options()
