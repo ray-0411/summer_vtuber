@@ -14,52 +14,70 @@ import pytesseract
 from PIL import Image
 
 # 使用 Selenium 截取 YouTube 頁面截圖
-def youtube_capture_screenshot(target_url, save_path,driver=None):
+def youtube_capture_screenshot(target_url, save_path, driver=None):
     """
-    使用 Selenium 截取 YouTube 頁面截圖
+    使用 Selenium 截取 YouTube 頁面截圖（具備自動重啟保護）
     """
     print("🚀 開始截取網頁...")
-    
-    own_driver = False
-    
-    if driver is None:
-        # 沒傳入 driver 才自己創建
+
+    def create_driver():
         options = Options()
         options.add_argument('--headless')
         options.add_argument('--disable-gpu')
         options.add_argument('--window-size=2560,1440')
         options.add_argument('--mute-audio')
-        driver = webdriver.Chrome(options=options)
+        return webdriver.Chrome(options=options)
+
+    own_driver = False
+
+    if driver is None:
+        driver = create_driver()
         own_driver = True
-    
+
     try:
         driver.get(target_url)
-
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
-
         driver.execute_script("document.body.style.zoom='130%'")
-        
-        WebDriverWait(driver, 5).until(
-            EC.presence_of_element_located((By.TAG_NAME, "body"))
-        )
-        
-        # 建立資料夾（若不存在）
+        time.sleep(1)
+
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        
-        # 擷取畫面並儲存
         driver.save_screenshot(save_path)
         print(f"✅ 截圖已儲存至：{save_path}")
-        return True
+        return True,driver
 
     except Exception as e:
-        print("❌ 截圖時發生錯誤：", e)
-        return False
+        print(f"❌ 截圖時發生錯誤：{e}")
+        try:
+            driver.quit()
+        except:
+            pass
 
+        # 🔁 嘗試自動重啟一次
+        print("🔁 嘗試重新啟動 Chrome driver...")
+        try:
+            driver = create_driver()
+            driver.get(target_url)
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
+            driver.execute_script("document.body.style.zoom='130%'")
+            time.sleep(1)
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            driver.save_screenshot(save_path)
+            print(f"✅ 截圖已儲存至：{save_path}（重試成功）")
+            return True,driver
+        except Exception as e2:
+            print(f"❌ 重啟後仍失敗：{e2}")
+            return False,driver
     finally:
         if own_driver:
-            driver.quit()  # 只有自己產生的才關閉
+            try:
+                driver.quit()
+            except:
+                pass
+
 
 
 # 使用 OpenCV 尋找目標圖案並裁切指定區域

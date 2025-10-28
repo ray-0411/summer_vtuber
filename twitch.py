@@ -14,84 +14,73 @@ import pytesseract
 from PIL import Image
 
 # 使用 Selenium 截取 Twitch 頁面截圖
-def twitch_capture_screenshot(target_url, save_path, driver=None,zoom=140):
-    
-    own_driver = False
-    
-    if driver is None:
-        # 沒傳入 driver 才自己創建
+def twitch_capture_screenshot(target_url, save_path, driver=None, zoom=140):
+    """
+    使用 Selenium 截取 Twitch 頁面截圖（具備自動重啟保護）
+    """
+    print("🚀 開始截取 Twitch 頁面...")
+
+    def create_driver():
         options = Options()
         options.add_argument('--headless')
         options.add_argument('--disable-gpu')
         options.add_argument('--window-size=2560,1440')
         options.add_argument('--mute-audio')
-        driver = webdriver.Chrome(options=options)
+        return webdriver.Chrome(options=options)
+
+    own_driver = False
+    if driver is None:
+        driver = create_driver()
         own_driver = True
 
     try:
-        """
         driver.get(target_url)
-        
-        wait = WebDriverWait(driver, 10)
-        
-        element = wait.until(EC.presence_of_element_located((
+        wait = WebDriverWait(driver, 15)
+        wait.until(EC.presence_of_element_located((
             By.CSS_SELECTOR,
             "button[aria-label^='追隨 '][data-a-target='follow-button']"
         )))
-        time.sleep(3)
-        
-        if element:
-            print("追隨按鈕已載入")
-        else:
-            print("❌ 追隨按鈕未載入，可能不是直播頁面")
-        """
-        MAX_RETRIES = 2
-        retry_count = 0
+        print("✅ 頁面載入完成")
 
-        while retry_count < MAX_RETRIES:
-            try:
-                driver.get(target_url)
-                wait = WebDriverWait(driver, 15)
-                element = wait.until(EC.presence_of_element_located((
-                    By.CSS_SELECTOR,
-                    "button[aria-label^='追隨 '][data-a-target='follow-button']"
-                )))
-                print("✅ 追隨按鈕已載入")
-                time.sleep(3)
-                break  # 找到了就跳出迴圈
-
-            except TimeoutException:
-                retry_count += 1
-                print(f"⚠️ 第 {retry_count} 次失敗，重新載入網頁...")
-
-        else:
-            print("❌ 重試多次仍找不到追隨按鈕，可能不是直播頁面或 DOM 結構改了")
-        
-        
-        # 設定縮放為 130%
         driver.execute_script(f"document.body.style.zoom='{zoom}%'")
-        #time.sleep(1)  # 稍微等一下縮放生效
-        
-        WebDriverWait(driver, 5).until(
-            EC.presence_of_element_located((By.TAG_NAME, "body"))
-        )
-        
-
-        # 建立資料夾（若不存在）
+        time.sleep(1)
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
-
-        # 擷取畫面並儲存
         driver.save_screenshot(save_path)
         print(f"✅ 截圖已儲存至：{save_path}")
-        return True
+        return True,driver
 
     except Exception as e:
-        print("❌ 截圖時發生錯誤：", e)
-        return False
+        print(f"❌ 截圖時發生錯誤：{e}")
+        try:
+            driver.quit()
+        except:
+            pass
 
+        # 🔁 自動重啟一次
+        print("🔁 嘗試重新啟動 Chrome driver...")
+        try:
+            driver = create_driver()
+            driver.get(target_url)
+            wait = WebDriverWait(driver, 15)
+            wait.until(EC.presence_of_element_located((
+                By.CSS_SELECTOR,
+                "button[aria-label^='追隨 '][data-a-target='follow-button']"
+            )))
+            driver.execute_script(f"document.body.style.zoom='{zoom}%'")
+            time.sleep(1)
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            driver.save_screenshot(save_path)
+            print(f"✅ 截圖已儲存至：{save_path}（重試成功）")
+            return True,driver
+        except Exception as e2:
+            print(f"❌ 重啟後仍失敗：{e2}")
+            return False,driver
     finally:
         if own_driver:
-            driver.quit()  # 只有自己產生的才關閉
+            try:
+                driver.quit()
+            except:
+                pass
 
 # 使用 OpenCV 尋找目標圖案並裁切指定區域
 def twitch_find_and_crop \

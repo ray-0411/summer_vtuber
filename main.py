@@ -42,7 +42,8 @@ def yt_part(log, cid, name, yt_url, driver):
     template_path = "find/yt_find.png"
     
     # 步驟 1：截圖網頁
-    if not youtube_capture_screenshot(yt_url, screenshot_path, driver):
+    ok, driver = youtube_capture_screenshot(yt_url, screenshot_path, driver)
+    if not ok:
         log("❌ 截圖失敗，略過此頻道")
         return 0 ,False
     
@@ -101,7 +102,8 @@ def tw_part(log, cid, name, tw_url , driver):
 
     while retry_count < max_retries:
         # 步驟 1：截圖
-        if not twitch_capture_screenshot(tw_url, screenshot_path, driver):
+        ok, driver = twitch_capture_screenshot(tw_url, screenshot_path, driver)
+        if not ok:
             log("❌ 截圖失敗，略過此頻道")
             return 0, False  
 
