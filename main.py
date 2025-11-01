@@ -196,12 +196,15 @@ def main(log_callback=None,kind=0):
     
     # 設定 Selenium WebDriver
     options = Options()
-    options.add_argument('--headless')
-    options.add_argument('--disable-gpu')
+    options.add_argument('--headless=new')     # 新版 headless 模式，支援 GPU
+    options.add_argument('--use-gl=angle')     # 使用 ANGLE (DirectX)
     options.add_argument('--window-size=2560,1440')
     options.add_argument('--mute-audio')
+    options.add_argument('--ignore-certificate-errors')
+    options.add_argument('--ignore-ssl-errors')
 
     driver = webdriver.Chrome(options=options)
+
     
     # 日誌輸出函數
     def log(msg):
