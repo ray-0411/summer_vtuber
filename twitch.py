@@ -12,6 +12,31 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 import pytesseract
 from PIL import Image
+import subprocess, time
+import urllib3
+
+def cleanup_chrome():
+    """僅清理 Selenium 啟動的 headless Chrome 進程"""
+    try:
+        # 尋找所有帶 "--headless" 的 Chrome 進程
+        result = subprocess.run(
+            'wmic process where "name=\'chrome.exe\' and commandline like \'%%--headless%%\'" get processid',
+            shell=True, capture_output=True, text=True
+        )
+
+        # 擷取 process ID
+        pids = [pid.strip() for pid in result.stdout.split() if pid.strip().isdigit()]
+        if pids:
+            for pid in pids:
+                subprocess.run(f"taskkill /PID {pid} /F", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            print(f"🧹 已清理 {len(pids)} 個 headless Chrome 進程。")
+        else:
+            print("✅ 沒有發現殘留的 headless Chrome。")
+
+        # 一併清理殘留的 chromedriver
+        subprocess.run("taskkill /f /im chromedriver.exe", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception as e:
+        print(f"⚠️ 清理過程出錯：{e}")
 
 # 使用 Selenium 截取 Twitch 頁面截圖
 def twitch_capture_screenshot(target_url, save_path, driver=None, zoom=140):
@@ -21,6 +46,9 @@ def twitch_capture_screenshot(target_url, save_path, driver=None, zoom=140):
     print("🚀 開始截取 Twitch 頁面...")
 
     def create_driver():
+        urllib3.PoolManager().clear()
+        cleanup_chrome()
+        
         options = Options()
         options.add_argument('--headless')
         options.add_argument('--disable-gpu')
@@ -81,6 +109,7 @@ def twitch_capture_screenshot(target_url, save_path, driver=None, zoom=140):
                 driver.quit()
             except:
                 pass
+            time.sleep(0.5)
 
 # 使用 OpenCV 尋找目標圖案並裁切指定區域
 def twitch_find_and_crop \
