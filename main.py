@@ -5,6 +5,10 @@ import easyocr
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import subprocess
+import socket
+import urllib3
+import os
+import sys
 
 
 from youtube import (
@@ -33,7 +37,6 @@ OCR_READER = easyocr.Reader(['ch_tra', 'en'], gpu=False)
 DB_PATH = "data.db"
 
 
-
 def yt_part(log, cid, name, yt_url, driver):
     
     log(f"📺 處理 YouTube 頻道：{name}")
@@ -42,19 +45,21 @@ def yt_part(log, cid, name, yt_url, driver):
     template_path = "find/yt_find.png"
     
     # 步驟 1：截圖網頁
-    ok, driver = youtube_capture_screenshot(yt_url, screenshot_path, driver)
+    ok, driver,error = youtube_capture_screenshot(yt_url, screenshot_path, driver)
     if not ok:
         log("❌ 截圖失敗，略過此頻道")
-        return 0 ,False
+        return 0 ,False,error
+    
+
     
     # 步驟 2：裁切圖片和確認是否再開台
     yt_find_and_crop_rt, find_x, find_y= youtube_find_and_crop(screenshot_path, template_path, cropped_path,80)
     if yt_find_and_crop_rt==1:
         log(f"❌ {name} youtube沒在開台")
-        return 0 ,False
+        return 0 ,False,error
     elif yt_find_and_crop_rt==2:
         log("❌ 圖片開啟失敗")
-        return 0 ,False
+        return 0 ,False,error
     
     log(f"✅ {name} youtube正在開台")
     
@@ -68,24 +73,24 @@ def yt_part(log, cid, name, yt_url, driver):
         yt_find_and_crop_rt, find_x, find_y= youtube_find_and_crop(screenshot_path, template_path, cropped_path,100)
         if yt_find_and_crop_rt==1:
             log(f"❌ {name} youtube沒在開台")
-            return 0 ,False
+            return 0 ,False,error
         elif yt_find_and_crop_rt==2:
             log("❌ 圖片開啟失敗")
-            return 0 ,False
+            return 0 ,False,error
         
         yt_count = youtube_extract_viewer_count(cropped_path, OCR_READER)
         yt_count = int(yt_count) if isinstance(yt_count, str) else yt_count
         
         if(yt_count == -1):
             log(f"❌ [{name}] OCR 辨識失敗")
-            return 0 ,False
+            return 0 ,False,error
     
     if yt_count == -2:
         log(f"❌ OCR 處理時發生錯誤")
-        return 0 ,False
+        return 0 ,False,error
     else:
         log(f"🎉 [{name}] 正在觀看人數：{yt_count} 人")
-        return yt_count ,True
+        return yt_count ,True,error
 
 
 def tw_part(log, cid, name, tw_url , driver):
@@ -102,10 +107,10 @@ def tw_part(log, cid, name, tw_url , driver):
 
     while retry_count < max_retries:
         # 步驟 1：截圖
-        ok, driver = twitch_capture_screenshot(tw_url, screenshot_path, driver)
+        ok, driver,error = twitch_capture_screenshot(tw_url, screenshot_path, driver)
         if not ok:
             log("❌ 截圖失敗，略過此頻道")
-            return 0, False  
+            return 0, False,error 
 
         # 步驟 2：先比對 path1（開台畫面）
         rt1 = twitch_find_and_crop(screenshot_path, template_path, cropped_path)
@@ -117,18 +122,18 @@ def tw_part(log, cid, name, tw_url , driver):
 
         elif rt1 == 2:
             log("❌ 圖片開啟失敗（path1）")
-            return 0, False
+            return 0, False,error
 
         # 若 rt1 == 1，進入第二層判斷，用 path2（沒開台畫面）確認
         rt2 = twitch_find_and_crop(screenshot_path, template_path_2, cropped_path)
         
         if rt2 == 0:
             log(f"❌ {name} twitch沒在開台")
-            return 0, False
+            return 0, False,error
 
         elif rt2 == 2:
             log("❌ 圖片開啟失敗（path2）")
-            return 0, False
+            return 0, False,error
 
         # 兩個都沒找到，屬於畫面異常，重試
         log("⚠️ 無法確認開台狀態，重新截圖中...")
@@ -136,7 +141,7 @@ def tw_part(log, cid, name, tw_url , driver):
 
     if not success:
         log(f"❌ {name} twitch疑似開台但畫面錯誤（已重試 {max_retries} 次）")
-        return 0, False
+        return 0, False,error
 
 
     # 步驟 3：OCR 提取觀看人數
@@ -145,13 +150,13 @@ def tw_part(log, cid, name, tw_url , driver):
     
     if tw_count == -2:
         log(f"❌ OCR 處理時發生錯誤")
-        return 0 ,False
+        return 0 ,False,error
     elif tw_count == -1:
         log(f"❌ [{name}] 沒有找到觀看人數")
-        return 0 ,False
+        return 0 ,False,error
     else:
         log(f"🎉 [{name}] 正在觀看人數：{tw_count} 人")
-        return tw_count ,True
+        return tw_count ,True,error
 
 
 def cleanup_headless_chrome():
@@ -177,7 +182,57 @@ def cleanup_headless_chrome():
     except Exception as e:
         print(f"⚠️ 清理過程出錯：{e}")
         
-        
+
+
+
+def create_driver():
+    urllib3.PoolManager().clear()
+    cleanup_headless_chrome()
+
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--window-size=2560,1440')
+    options.add_argument('--mute-audio')
+    options.add_argument('--ignore-certificate-errors')
+    options.add_argument('--ignore-ssl-errors')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-features=VizDisplayCompositor')
+    options.add_argument('--disable-software-rasterizer')
+    options.add_argument('--disable-extensions')
+    options.add_argument('--disable-infobars')
+    options.add_argument('--disable-blink-features=AutomationControlled')
+    options.add_argument('--dns-prefetch-disable')  # ✅ 避免 TCP DNS hang
+    options.add_argument('--disable-features=NetworkService,NetworkServiceInProcess')
+
+    try:
+        driver = webdriver.Chrome(options=options)
+        driver.set_page_load_timeout(20)   # ✅ 加上載入逾時保護
+        driver.set_script_timeout(20)
+        return driver
+    except Exception as e:
+        print(f"❌ ChromeDriver 初始化失敗：{e}")
+        time.sleep(3)
+        cleanup_headless_chrome()
+        return webdriver.Chrome(options=options)
+
+
+
+
+def reset_socket_layer():
+    try:
+        urllib3.PoolManager().clear()
+        socket.setdefaulttimeout(10)
+    except Exception as e:
+        print(f"⚠️ socket 清理失敗：{e}")
+
+def restart_ui():
+    print("🚨 錯誤過多，正在重新啟動 UI 程式...")
+    python = sys.executable
+    ui_path = os.path.join(os.path.dirname(__file__), "ui.py")
+    os.execl(python, python, ui_path)
+
 
 def main(log_callback=None,kind=0):
     """
@@ -187,6 +242,8 @@ def main(log_callback=None,kind=0):
     #程式計時器
     start_time = time.time()
     
+    fail_count = 0
+    
     # 初始化資料庫
     init_db()
     
@@ -194,16 +251,18 @@ def main(log_callback=None,kind=0):
     
     cleanup_headless_chrome()
     
+    
     # 設定 Selenium WebDriver
-    options = Options()
-    options.add_argument('--headless=new')     # 新版 headless 模式，支援 GPU
-    options.add_argument('--use-gl=angle')     # 使用 ANGLE (DirectX)
-    options.add_argument('--window-size=2560,1440')
-    options.add_argument('--mute-audio')
-    options.add_argument('--ignore-certificate-errors')
-    options.add_argument('--ignore-ssl-errors')
+    # options = Options()
+    # options.add_argument('--headless=new')     # 新版 headless 模式，支援 GPU
+    # options.add_argument('--use-gl=angle')     # 使用 ANGLE (DirectX)
+    # options.add_argument('--window-size=2560,1440')
+    # options.add_argument('--mute-audio')
+    # options.add_argument('--ignore-certificate-errors')
+    # options.add_argument('--ignore-ssl-errors')
+    
 
-    driver = webdriver.Chrome(options=options)
+    driver = create_driver()
 
     
     # 日誌輸出函數
@@ -235,16 +294,26 @@ def main(log_callback=None,kind=0):
         
         # 處理 YouTube 頻道
         if yt_url:
-            yt_count ,ytstreaming = yt_part(log, cid, name, yt_url, driver)
+            yt_count ,ytstreaming,error = yt_part(log, cid, name, yt_url, driver)
         else:
             log(f"❌ {name} 沒有提供 YouTube 連結，跳過")
+        
+        if not error:
+            fail_count += 1
+            if fail_count >=5:
+                restart_ui()
         
         # 處理 Twitch 頻道
         
         if tw_url:
-            tw_count ,twstreaming = tw_part(log, cid, name, tw_url, driver)
+            tw_count ,twstreaming,error = tw_part(log, cid, name, tw_url, driver)
         else:
             log(f"❌ {name} 沒有提供 Twitch 直播連結，跳過")
+        
+        if not error:
+            fail_count += 1
+            if fail_count >=5:
+                restart_ui()
         
         if ytstreaming or twstreaming:
             log(f"✅ {name} 直播狀態：YouTube: {str(yt_count)+"人" if ytstreaming else "沒有開台"}, Twitch: {str(tw_count)+"人" if twstreaming else "沒有開台"}")
@@ -284,6 +353,10 @@ def main(log_callback=None,kind=0):
             
             save_viewer_count(cid, yt_count, tw_count, yt_number, tw_number, DB_PATH)
             
+        reset_socket_layer()
+        time.sleep(0.5)
+
+
     log("\n✅ 所有頻道處理完成")
     print("\n✅ 所有頻道處理完成")
     

@@ -38,7 +38,42 @@ def cleanup_chrome():
     except Exception as e:
         print(f"⚠️ 清理過程出錯：{e}")
         
-        
+
+
+def create_driver():
+    urllib3.PoolManager().clear()
+    cleanup_chrome()
+
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--window-size=2560,1440')
+    options.add_argument('--mute-audio')
+    options.add_argument('--ignore-certificate-errors')
+    options.add_argument('--ignore-ssl-errors')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-features=VizDisplayCompositor')
+    options.add_argument('--disable-software-rasterizer')
+    options.add_argument('--disable-extensions')
+    options.add_argument('--disable-infobars')
+    options.add_argument('--disable-blink-features=AutomationControlled')
+    options.add_argument('--dns-prefetch-disable')  # ✅ 避免 TCP DNS hang
+    options.add_argument('--disable-features=NetworkService,NetworkServiceInProcess')
+
+    try:
+        driver = webdriver.Chrome(options=options)
+        driver.set_page_load_timeout(20)   # ✅ 加上載入逾時保護
+        driver.set_script_timeout(20)
+        return driver
+    except Exception as e:
+        print(f"❌ ChromeDriver 初始化失敗：{e}")
+        time.sleep(3)
+        cleanup_chrome()
+        return webdriver.Chrome(options=options)
+
+
+
 # 使用 Selenium 截取 YouTube 頁面截圖
 def youtube_capture_screenshot(target_url, save_path, driver=None):
     """
@@ -46,16 +81,6 @@ def youtube_capture_screenshot(target_url, save_path, driver=None):
     """
     print("🚀 開始截取網頁...")
 
-    def create_driver():
-        urllib3.PoolManager().clear()
-        cleanup_chrome()
-        
-        options = Options()
-        options.add_argument('--headless')
-        options.add_argument('--disable-gpu')
-        options.add_argument('--window-size=2560,1440')
-        options.add_argument('--mute-audio')
-        return webdriver.Chrome(options=options)
 
     own_driver = False
 
@@ -74,7 +99,7 @@ def youtube_capture_screenshot(target_url, save_path, driver=None):
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         driver.save_screenshot(save_path)
         print(f"✅ 截圖已儲存至：{save_path}")
-        return True,driver
+        return True,driver,True
 
     except Exception as e:
         print(f"❌ 截圖時發生錯誤：{e}")
@@ -96,10 +121,10 @@ def youtube_capture_screenshot(target_url, save_path, driver=None):
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
             driver.save_screenshot(save_path)
             print(f"✅ 截圖已儲存至：{save_path}（重試成功）")
-            return True,driver
+            return True,driver,False
         except Exception as e2:
             print(f"❌ 重啟後仍失敗：{e2}")
-            return False,driver
+            return False,driver,False
     finally:
         if own_driver:
             try:
