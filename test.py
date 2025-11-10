@@ -28,6 +28,8 @@ from sql import (
     get_channel_name_by_id
 )
 
+from main import cleanup_headless_chrome  # 匯入清理函數
+
 from main_data_fun import plot_time_distribution  # 匯入函數
 
 if __name__ == "__main__":
@@ -41,6 +43,8 @@ if __name__ == "__main__":
     #crop_path = "test/test_crop.png"
     #crop_path = "test/japanese_title.png"
     db_path = "data.db"
+    
+    cleanup_headless_chrome()  # 呼叫清理函數
     
     # 假設 df_selected 已經篩選好
     

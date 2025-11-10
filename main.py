@@ -229,6 +229,7 @@ def reset_socket_layer():
 
 def restart_ui():
     print("🚨 錯誤過多，正在重新啟動 UI 程式...")
+    cleanup_headless_chrome()
     python = sys.executable
     ui_path = os.path.join(os.path.dirname(__file__), "ui.py")
     os.execl(python, python, ui_path)
