@@ -302,6 +302,7 @@ def main(log_callback=None,kind=0):
         if not error:
             fail_count += 1
             if fail_count >=5:
+                fail_count = 0
                 restart_ui()
         
         # 處理 Twitch 頻道
@@ -357,7 +358,8 @@ def main(log_callback=None,kind=0):
         reset_socket_layer()
         time.sleep(0.5)
 
-
+    cleanup_headless_chrome()
+    
     log("\n✅ 所有頻道處理完成")
     print("\n✅ 所有頻道處理完成")
     
