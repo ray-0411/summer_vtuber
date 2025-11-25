@@ -177,7 +177,7 @@ if view_mode == "單一頻道":
         sortable=True,
     )
     for col, width in zip(["直播ID", "平均觀看數", "最大觀看數", "最小觀看數", "資料筆數", "日期", "開始時間", "結束時間", "直播名稱"],
-                        [100, 100, 100, 100, 100, 120, 100, 100, 1500]):
+                        [1200, 1500, 1500, 1500, 1000, 2000, 1500, 1500, 1000]):
         if col in df_yt_display.columns:
             gb.configure_column(col, width=width, filter=False)
     
@@ -253,7 +253,7 @@ if view_mode == "單一頻道":
     gb2 = GridOptionsBuilder.from_dataframe(df_tw_display)
     gb2.configure_default_column(editable=False, groupable=False, filter=False, resizable=True, sortable=True)
     for col, width in zip(["直播ID", "平均觀看數", "最大觀看數", "最小觀看數", "資料筆數", "日期", "開始時間", "結束時間", "直播名稱"],
-                        [100, 100, 100, 100, 100, 120, 100, 100, 1500]):
+                        [1200, 1500, 1500, 1500, 1000, 2000, 1500, 1500, 1000]):
         if col in df_tw_display.columns:
             gb2.configure_column(col, width=width, filter=False)
 
@@ -357,7 +357,7 @@ elif view_mode == "總觀看統計":
     # 設定欄寬
     for col, width in zip(
         ["編號", "頻道", "YouTube 平均觀看數", "Twitch 平均觀看數", "紀錄筆數", "YouTube 直播場數", "Twitch 直播場數"],
-        [60, 150, 150, 150, 100, 150, 150]
+        [80, 200, 150, 150, 100, 150, 150]
     ):
         gb.configure_column(col, width=width)
 
@@ -457,7 +457,7 @@ elif view_mode == "全部頻道影片":
     gb.configure_default_column(editable=False, groupable=False, filter=False, resizable=True, sortable=True)
     for col, width in zip(
         ["直播ID", "平均觀看數", "最大觀看數", "最小觀看數", "資料筆數", "日期", "開始時間", "結束時間", "直播名稱", "頻道名稱"],
-        [100, 100, 100, 100, 100, 120, 100, 100, 1000, 100]
+        [120, 150, 150, 150, 100, 200, 150, 150, 100, 200]
     ):
         if col in df_yt_display.columns:
             gb.configure_column(col, width=width, filter=False)
@@ -490,10 +490,10 @@ elif view_mode == "全部頻道影片":
     gb2.configure_default_column(editable=False, groupable=False, filter=False, resizable=True, sortable=True)
     for col, width in zip(
         ["直播ID", "平均觀看數", "最大觀看數", "最小觀看數", "資料筆數", "日期", "開始時間", "結束時間", "直播名稱", "頻道名稱"],
-        [100, 100, 100, 100, 100, 120, 100, 100, 1000, 100]
+        [120, 150, 150, 150, 100, 200, 150, 150, 100, 200]
     ):
         if col in df_tw_display.columns:
             gb2.configure_column(col, width=width, filter=False)
-    AgGrid(df_tw_display, gridOptions=gb2.build(), theme='balham', height=400, width='100%', key='tw_all_video')
+    AgGrid(df_tw_display, gridOptions=gb2.build(), theme='balham', height=400, width=900, key='tw_all_video')
     
     plot_time_count_all_channels(df)
