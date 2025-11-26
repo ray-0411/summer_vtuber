@@ -204,6 +204,10 @@ def create_driver():
     options.add_argument('--disable-infobars')
     options.add_argument('--disable-blink-features=AutomationControlled')
     options.add_argument('--dns-prefetch-disable')  # ✅ 避免 TCP DNS hang
+    options.add_argument("--disable-breakpad")
+    options.add_argument("--disable-crash-reporter")
+    options.add_argument("--disable-logging")
+    options.add_argument("--log-level=3")
     options.add_argument('--disable-features=NetworkService,NetworkServiceInProcess')
 
     try:
