@@ -74,19 +74,21 @@ def create_driver():
 
 
 
-# 使用 Selenium 截取 YouTube 頁面截圖
 def youtube_capture_screenshot(target_url, save_path, driver=None):
     """
     使用 Selenium 截取 YouTube 頁面截圖（具備自動重啟保護）
     """
     print("🚀 開始截取網頁...")
 
-
+    old_driver_to_quit = None
     own_driver = False
 
     if driver is None:
         driver = create_driver()
         own_driver = True
+    
+    # 將第一次建立的 driver 實例存起來，供 finally 區塊使用
+    old_driver_to_quit = driver 
 
     try:
         driver.get(target_url)
@@ -99,40 +101,69 @@ def youtube_capture_screenshot(target_url, save_path, driver=None):
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         driver.save_screenshot(save_path)
         print(f"✅ 截圖已儲存至：{save_path}")
-        return True,driver,True
+        
+        # 第一次成功：返回 True, driver(舊的), True
+        # 在 finally 中，如果 own_driver=True，這個 driver 會被關閉。
+        return True, driver, True
 
     except Exception as e:
         print(f"❌ 截圖時發生錯誤：{e}")
+        
+        # 第一次錯誤發生時，嘗試在 finally 執行前先清理它（但不改變 finally 的標誌）
         try:
+            # 這裡的 driver.quit() 是針對第一次失敗的實例
             driver.quit()
         except:
             pass
 
         # 🔁 嘗試自動重啟一次
         print("🔁 嘗試重新啟動 Chrome driver...")
+        new_driver = None # 確保 new_driver 在作用域內被初始化
+        
         try:
-            driver = create_driver()
-            driver.get(target_url)
-            WebDriverWait(driver, 10).until(
+            new_driver = create_driver()
+            # 關鍵：重啟成功，own_driver 必須設為 False，
+            # 這樣 finally 就不會關閉這個新的 driver。
+            own_driver = False 
+            
+            new_driver.get(target_url)
+            WebDriverWait(new_driver, 10).until(
                 EC.presence_of_element_located((By.TAG_NAME, "body"))
             )
-            driver.execute_script("document.body.style.zoom='130%'")
+            new_driver.execute_script("document.body.style.zoom='130%'")
             time.sleep(1)
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
-            driver.save_screenshot(save_path)
+            new_driver.save_screenshot(save_path)
             print(f"✅ 截圖已儲存至：{save_path}（重試成功）")
-            return True,driver,False
+            
+            # 重試成功：返回 True, new_driver(新的), False
+            return True, new_driver, False
+        
         except Exception as e2:
             print(f"❌ 重啟後仍失敗：{e2}")
-            return False,driver,False
+            
+            # 重試失敗：新的 driver 實例必須在這裡關閉！
+            if new_driver:
+                try:
+                    new_driver.quit()
+                except:
+                    pass
+            
+            # 返回失敗，返回的 driver 設為 None，因為舊的已崩潰/關閉，新的也已關閉。
+            return False, None, False
+        
     finally:
-        if own_driver:
+        # 這個 finally 區塊只處理第一次建立的 driver。
+        # 1. 如果第一次成功 (own_driver=True)，則關閉它。
+        # 2. 如果重試成功 (own_driver=False)，則不會關閉新 driver。
+        # 3. 如果重試失敗 (old_driver_to_quit已在 except 中處理，new_driver已在 except 中處理)，這裡也不會誤關。
+        
+        if own_driver and old_driver_to_quit:
             try:
-                driver.quit()
+                old_driver_to_quit.quit() # 關閉第一次建立的 driver
             except:
                 pass
             time.sleep(0.5)
-
 
 
 # 使用 OpenCV 尋找目標圖案並裁切指定區域

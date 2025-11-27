@@ -80,12 +80,18 @@ def twitch_capture_screenshot(target_url, save_path, driver=None, zoom=140):
     """
     print("🚀 開始截取 Twitch 頁面...")
 
-    own_driver = False
+    # 1. 隔離變數：儲存舊 driver 的實例和清理標誌
+    old_driver_to_quit = None
+    own_driver_flag = False # 這個標誌只追蹤第一次建立的 driver 是否由本函數擁有
+
     if driver is None:
         driver = create_driver()
-        own_driver = True
+        own_driver_flag = True
+    
+    old_driver_to_quit = driver # 紀錄第一次使用的 driver 實例
 
     try:
+        # --- 第一次嘗試邏輯 ---
         driver.get(target_url)
         wait = WebDriverWait(driver, 15)
         wait.until(EC.presence_of_element_located((
@@ -99,38 +105,73 @@ def twitch_capture_screenshot(target_url, save_path, driver=None, zoom=140):
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         driver.save_screenshot(save_path)
         print(f"✅ 截圖已儲存至：{save_path}")
-        return True,driver,True
+        
+        # 第一次成功：返回 driver (舊的)，但這裡的 driver 會在 finally 被清理
+        # 為了保留它，我們必須在 finally 中不執行清理，但這裡的設計要求 finally 執行清理。
+        # 因此，這裡的 `return True, driver, True` 是讓外部知道它是舊的 driver，並且應該被清理。
+        return True, driver, True
 
     except Exception as e:
         print(f"❌ 截圖時發生錯誤：{e}")
+        
+        # 第一次錯誤發生時，嘗試清理舊 driver
         try:
-            driver.quit()
+            # 這裡的 driver.quit() 是針對第一次失敗的實例
+            old_driver_to_quit.quit()
         except:
             pass
+        
+        # 關鍵：第一次 driver 已被嘗試清理，將 own_driver_flag 設為 False，
+        # 避免 finally 再次嘗試清理它，也確保重試成功時，新的 driver 不會被誤關。
+        own_driver_flag = False 
 
         # 🔁 自動重啟一次
         print("🔁 嘗試重新啟動 Chrome driver...")
+        new_driver = None # 確保 new_driver 變數存在於作用域內
+        
         try:
-            driver = create_driver()
-            driver.get(target_url)
-            wait = WebDriverWait(driver, 15)
+            new_driver = create_driver()
+            
+            # --- 重試邏輯 ---
+            new_driver.get(target_url)
+            wait = WebDriverWait(new_driver, 15)
             wait.until(EC.presence_of_element_located((
                 By.CSS_SELECTOR,
                 "button[aria-label^='追隨 '][data-a-target='follow-button']"
             )))
-            driver.execute_script(f"document.body.style.zoom='{zoom}%'")
+            new_driver.execute_script(f"document.body.style.zoom='{zoom}%'")
             time.sleep(1)
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
-            driver.save_screenshot(save_path)
+            new_driver.save_screenshot(save_path)
             print(f"✅ 截圖已儲存至：{save_path}（重試成功）")
-            return True,driver,False
+            
+            # 重試成功：返回 True, new_driver(新的), False。
+            # new_driver 將被保留，因為 own_driver_flag 為 False。
+            return True, new_driver, False
+            
         except Exception as e2:
             print(f"❌ 重啟後仍失敗：{e2}")
-            return False,driver,False
+            
+            # 重試失敗：新的 driver 實例必須在這裡關閉！
+            if new_driver:
+                try:
+                    new_driver.quit()
+                except:
+                    pass
+            
+            # 返回失敗，返回的 driver 設為 None
+            return False, None, False
+            
     finally:
-        if own_driver:
+        # 這個 finally 區塊只負責處理「第一次建立」且「沒有在 except 中被處理」的 driver。
+        # 在這個修改後的邏輯中，它只會清理在第一次嘗試成功時建立的 driver。
+        
+        # 檢查：
+        # 1. 第一次成功：own_driver_flag=True, old_driver_to_quit!=None -> 關閉
+        # 2. 第一次失敗 (進入 except)：own_driver_flag=False -> 不執行清理
+        if own_driver_flag and old_driver_to_quit:
             try:
-                driver.quit()
+                old_driver_to_quit.quit()
             except:
                 pass
             time.sleep(0.5)

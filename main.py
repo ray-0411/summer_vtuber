@@ -48,7 +48,7 @@ def yt_part(log, cid, name, yt_url, driver):
     ok, driver,error = youtube_capture_screenshot(yt_url, screenshot_path, driver)
     if not ok:
         log("❌ 截圖失敗，略過此頻道")
-        return 0 ,False,error
+        return 0, False, error, driver
     
 
     
@@ -56,10 +56,10 @@ def yt_part(log, cid, name, yt_url, driver):
     yt_find_and_crop_rt, find_x, find_y= youtube_find_and_crop(screenshot_path, template_path, cropped_path,80)
     if yt_find_and_crop_rt==1:
         log(f"❌ {name} youtube沒在開台")
-        return 0 ,False,error
+        return 0 ,False,error, driver
     elif yt_find_and_crop_rt==2:
         log("❌ 圖片開啟失敗")
-        return 0 ,False,error
+        return 0 ,False,error, driver
     
     log(f"✅ {name} youtube正在開台")
     
@@ -73,24 +73,24 @@ def yt_part(log, cid, name, yt_url, driver):
         yt_find_and_crop_rt, find_x, find_y= youtube_find_and_crop(screenshot_path, template_path, cropped_path,100)
         if yt_find_and_crop_rt==1:
             log(f"❌ {name} youtube沒在開台")
-            return 0 ,False,error
+            return 0 ,False,error, driver
         elif yt_find_and_crop_rt==2:
             log("❌ 圖片開啟失敗")
-            return 0 ,False,error
+            return 0 ,False,error, driver
         
         yt_count = youtube_extract_viewer_count(cropped_path, OCR_READER)
         yt_count = int(yt_count) if isinstance(yt_count, str) else yt_count
         
         if(yt_count == -1):
             log(f"❌ [{name}] OCR 辨識失敗")
-            return 0 ,False,error
+            return 0 ,False,error, driver
     
     if yt_count == -2:
         log(f"❌ OCR 處理時發生錯誤")
-        return 0 ,False,error
+        return 0 ,False,error, driver
     else:
         log(f"🎉 [{name}] 正在觀看人數：{yt_count} 人")
-        return yt_count ,True,error
+        return yt_count ,True,error, driver
 
 
 def tw_part(log, cid, name, tw_url , driver):
@@ -110,7 +110,7 @@ def tw_part(log, cid, name, tw_url , driver):
         ok, driver,error = twitch_capture_screenshot(tw_url, screenshot_path, driver)
         if not ok:
             log("❌ 截圖失敗，略過此頻道")
-            return 0, False,error 
+            return 0, False,error, driver 
 
         # 步驟 2：先比對 path1（開台畫面）
         rt1 = twitch_find_and_crop(screenshot_path, template_path, cropped_path)
@@ -122,18 +122,18 @@ def tw_part(log, cid, name, tw_url , driver):
 
         elif rt1 == 2:
             log("❌ 圖片開啟失敗（path1）")
-            return 0, False,error
+            return 0, False,error, driver
 
         # 若 rt1 == 1，進入第二層判斷，用 path2（沒開台畫面）確認
         rt2 = twitch_find_and_crop(screenshot_path, template_path_2, cropped_path)
         
         if rt2 == 0:
             log(f"❌ {name} twitch沒在開台")
-            return 0, False,error
+            return 0, False,error, driver
 
         elif rt2 == 2:
             log("❌ 圖片開啟失敗（path2）")
-            return 0, False,error
+            return 0, False,error, driver
 
         # 兩個都沒找到，屬於畫面異常，重試
         log("⚠️ 無法確認開台狀態，重新截圖中...")
@@ -141,7 +141,7 @@ def tw_part(log, cid, name, tw_url , driver):
 
     if not success:
         log(f"❌ {name} twitch疑似開台但畫面錯誤（已重試 {max_retries} 次）")
-        return 0, False,error
+        return 0, False,error, driver
 
 
     # 步驟 3：OCR 提取觀看人數
@@ -150,13 +150,13 @@ def tw_part(log, cid, name, tw_url , driver):
     
     if tw_count == -2:
         log(f"❌ OCR 處理時發生錯誤")
-        return 0 ,False,error
+        return 0 , False, error, driver
     elif tw_count == -1:
         log(f"❌ [{name}] 沒有找到觀看人數")
-        return 0 ,False,error
+        return 0 , False, error, driver
     else:
         log(f"🎉 [{name}] 正在觀看人數：{tw_count} 人")
-        return tw_count ,True,error
+        return tw_count , True, error, driver
 
 
 def cleanup_headless_chrome():
@@ -266,6 +266,7 @@ def main(log_callback=None,kind=0):
     # options.add_argument('--ignore-certificate-errors')
     # options.add_argument('--ignore-ssl-errors')
     
+    
 
     driver = create_driver()
 
@@ -299,7 +300,7 @@ def main(log_callback=None,kind=0):
         
         # 處理 YouTube 頻道
         if yt_url:
-            yt_count ,ytstreaming,error = yt_part(log, cid, name, yt_url, driver)
+            yt_count ,ytstreaming,error,driver = yt_part(log, cid, name, yt_url, driver)
         else:
             log(f"❌ {name} 沒有提供 YouTube 連結，跳過")
         
@@ -312,7 +313,7 @@ def main(log_callback=None,kind=0):
         # 處理 Twitch 頻道
         
         if tw_url:
-            tw_count ,twstreaming,error = tw_part(log, cid, name, tw_url, driver)
+            tw_count ,twstreaming,error,driver = tw_part(log, cid, name, tw_url, driver)
         else:
             log(f"❌ {name} 沒有提供 Twitch 直播連結，跳過")
         
@@ -362,7 +363,6 @@ def main(log_callback=None,kind=0):
         reset_socket_layer()
         time.sleep(0.5)
 
-    cleanup_headless_chrome()
     
     log("\n✅ 所有頻道處理完成")
     print("\n✅ 所有頻道處理完成")
