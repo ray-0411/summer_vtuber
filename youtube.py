@@ -193,7 +193,7 @@ def youtube_find_and_crop \
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # 設定門檻與縮放比例範圍
-    threshold = 0.8
+    threshold = 0.85
     found = False
     top_left = None
     w, h = 0, 0
@@ -223,19 +223,32 @@ def youtube_find_and_crop \
         cv2.imwrite("pictures/result_match.png", img)
         print("✅ 已儲存標記畫面 result_match.png")
         
+        
         # ---------- 加上擷取附近區域 ----------
-        #offset_x = -350
-        #offset_y = 80
         crop_x = top_left[0] + offset_x
         crop_y = top_left[1] + offset_y
-        #crop_width = 250
-        #crop_height = 40
+        end_x = crop_x + crop_width
+        end_y = crop_y + crop_height
 
-        # 避免越界
-        crop_x = max(0, crop_x)
-        crop_y = max(0, crop_y)
-        end_x = min(crop_x + crop_width, img.shape[1])
-        end_y = min(crop_y + crop_height, img.shape[0])
+        img_h, img_w = img.shape[:2]
+
+        # 🚨【界外就直接報錯，不修正】
+        if (
+            crop_x < 0 or
+            crop_y < 0 or
+            end_x > img_w or
+            end_y > img_h or
+            end_x <= crop_x or
+            end_y <= crop_y
+        ):
+            print(
+                f"❌ Crop 界外 | "
+                f"img=({img_w},{img_h}) "
+                f"crop=({crop_x},{crop_y})→({end_x},{end_y}) "
+                f"top_left={top_left} "
+                f"offset=({offset_x},{offset_y})"
+            )
+            return 2, 0, 0   # 3 = crop 界外錯誤
 
         # 擷取區域
         cropped = img[crop_y:end_y, crop_x:end_x]
