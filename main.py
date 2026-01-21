@@ -173,9 +173,9 @@ def cleanup_headless_chrome():
         if pids:
             for pid in pids:
                 subprocess.run(f"taskkill /PID {pid} /F", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            print(f"🧹 已清理 {len(pids)} 個 headless Chrome 進程。")
+            print(f"🧹 已清理 {len(pids)} 個 headless Chrome 進程。 test")
         else:
-            print("✅ 沒有發現殘留的 headless Chrome。")
+            print("✅ 沒有發現殘留的 headless Chrome。test")
 
         # 一併清理殘留的 chromedriver
         subprocess.run("taskkill /f /im chromedriver.exe", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
