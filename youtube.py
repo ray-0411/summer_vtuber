@@ -95,7 +95,11 @@ def youtube_capture_screenshot(target_url, save_path, driver=None):
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
+        #放大
         driver.execute_script("document.body.style.zoom='130%'")
+        
+        driver.execute_script("window.scrollBy(0, 350);")
+        
         time.sleep(1)
 
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
@@ -130,8 +134,13 @@ def youtube_capture_screenshot(target_url, save_path, driver=None):
             WebDriverWait(new_driver, 10).until(
                 EC.presence_of_element_located((By.TAG_NAME, "body"))
             )
+            
+            # 放大
             new_driver.execute_script("document.body.style.zoom='130%'")
+            
+            driver.execute_script("window.scrollBy(0, 350);")
             time.sleep(1)
+            
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
             new_driver.save_screenshot(save_path)
             print(f"✅ 截圖已儲存至：{save_path}（重試成功）")
@@ -171,10 +180,10 @@ def youtube_find_and_crop \
     (img_path, 
     template_path, 
     crop_output_path,
-    offset_y=80, 
-    offset_x=-350,
-    crop_width=250, 
-    crop_height=40):
+    offset_y=110, 
+    offset_x=-500,
+    crop_width=350, 
+    crop_height=30):
     
     """
     使用 OpenCV 尋找目標圖案並裁切指定區域

@@ -53,7 +53,18 @@ def yt_part(log, cid, name, yt_url, driver):
 
     
     # 步驟 2：裁切圖片和確認是否再開台
-    yt_find_and_crop_rt, find_x, find_y= youtube_find_and_crop(screenshot_path, template_path, cropped_path,80)
+    yt_find_and_crop_rt, find_x, find_y = \
+        youtube_find_and_crop(
+            screenshot_path, 
+            template_path, 
+            cropped_path,
+            offset_x=-500,
+            offset_y=110,
+            crop_height=30,
+            crop_width=350
+        )
+        # 較長的標題
+        
     if yt_find_and_crop_rt==1:
         log(f"❌ {name} youtube沒在開台")
         return 0 ,False,error, driver
@@ -70,7 +81,14 @@ def yt_part(log, cid, name, yt_url, driver):
     
     if yt_count == -1:
         
-        yt_find_and_crop_rt, find_x, find_y= youtube_find_and_crop(screenshot_path, template_path, cropped_path,100)
+        yt_find_and_crop_rt, find_x, find_y = \
+            youtube_find_and_crop(
+                screenshot_path, 
+                template_path, 
+                cropped_path,
+                80
+            )
+            
         if yt_find_and_crop_rt==1:
             log(f"❌ {name} youtube沒在開台")
             return 0 ,False,error, driver

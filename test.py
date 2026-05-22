@@ -28,7 +28,10 @@ from sql import (
     get_channel_name_by_id
 )
 
-from main import cleanup_headless_chrome  # 匯入清理函數
+from main import (
+    cleanup_headless_chrome,
+    create_driver
+)  # 匯入清理函數
 
 from main_data_fun import plot_time_distribution  # 匯入函數
 
@@ -37,25 +40,15 @@ if __name__ == "__main__":
     
     #import_streamers_from_csv("copy_and_other/channels.csv", "data.db")
     
-    # test_yt_url = "https://www.youtube.com/@ItsukiIanvs/streams"  # 替換為實際的 YouTube 直播連結
+    test_yt_url = "https://www.youtube.com/@%E5%AE%9FHitomi/streams"  # 替換為實際的 YouTube 直播連結
     # test_twitch_url = "https://www.twitch.tv/kirali_neon"  # 替換為實際的 Twitch 直播連結
     #test_save_path = f"pictures/tw_picture/mizuki_capture.png"
     #crop_path = "test/test_crop.png"
     #crop_path = "test/japanese_title.png"
-    db_path = "data.db"
+    #db_path = "data.db"
     
-    cleanup_headless_chrome()  # 呼叫清理函數
+    #cleanup_headless_chrome()  # 呼叫清理函數
     
-    # 假設 df_selected 已經篩選好
-    
-    #plot_time_distribution(df_selected, st)
-    
-    # options = Options()
-    # options.add_argument('--headless')
-    # options.add_argument('--disable-gpu')
-    # options.add_argument('--window-size=2560,1440')
-    # options.add_argument('--mute-audio')
-    # driver = webdriver.Chrome(options=options)
     
     # OCR_READER = easyocr.Reader(['ch_tra', 'en'])
     # DB_PATH = "data.db"
@@ -65,23 +58,25 @@ if __name__ == "__main__":
     # name = youtube_extract_name(crop_path, OCR_READER)
     # link = youtube_click_for_link(driver,test_yt_url,find_x,find_y)
     
-    #print (f"{name} 的連結是 {link}")
-    #youtube_extract_viewer_count(crop_path, OCR_READER)
+    # -----------------------------------------------------
+    #yt 調整擷取位置
     
+    # youtube_capture_screenshot(
+    #     test_yt_url, 
+    #     "test/yt_capture.png", 
+    #     driver
+    # )
     
-    #import_streamers_from_csv("channels.csv", DB_PATH)
+    youtube_find_and_crop(
+        "test/yt_capture.png", 
+        "find/yt_find.png", 
+        "test/test_crop.png",
+        offset_x=-500,
+        offset_y=110,
+        crop_height=30,
+        crop_width=350
+    )
     
-    #print(get_channel_name_by_id("mizuki", DB_PATH))
+    #driver.quit()
     
-    # twitch_capture_screenshot(test_twitch_url, test_save_path, driver,140)
-    # twitch_find_and_crop(test_save_path, "find/tw_find_1.png", crop_path,
-    #                 offset_x=-1490,offset_y=-20, crop_height=100, crop_width=1200)
-    
-    # twitch_extract_viewer_count(crop_path,OCR_READER)
-    
-    #twitch_extract_name_2(crop_path)
-    
-    # #100 -150 0 100 25
-    
-    # driver.quit()  # 關閉瀏覽器
-    
+    #-----------------------------------------------------
